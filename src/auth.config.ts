@@ -2,8 +2,6 @@
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-export type AppRole = "admin" | "cliente" | "auditor";
-
 export const mockUsers = [
   {
     id: "1",

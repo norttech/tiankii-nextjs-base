@@ -2,9 +2,9 @@
 import { auth } from "@/auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/utils/error-handler";
-import type { SessionUser } from "@/types";
-import type { AppRole } from "@/auth.config";
 import { type ZodSchema } from "zod";
+
+// AppRole and SessionUser are now defined globally in src/types/global.d.ts
 
 export type GuardContext = {
   req: NextRequest;
@@ -27,6 +27,7 @@ function transformUser(rawUser: any): SessionUser {
   const role = rawUser.role as AppRole;
   return {
     ...rawUser,
+    role,
     isAdmin: role === "admin",
     isAuditor: role === "auditor",
     isCliente: role === "cliente",

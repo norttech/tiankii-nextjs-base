@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { PaginationParams, PaginatedResponse } from "@/types";
 
 export function getPaginationParams(req: Request) {
   const { searchParams } = new URL(req.url);

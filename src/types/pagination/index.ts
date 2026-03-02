@@ -1,23 +1,5 @@
-export interface PaginationParams {
-  page: number;
-  page_size: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    page_size: number;
-    total_items: number;
-    total_pages: number;
-    has_next: boolean;
-    has_previous: boolean;
-  };
-  links: {
-    self: string;
-    first: string;
-    prev: string | null;
-    next: string | null;
-    last: string;
-  };
+/** Ready-to-use query params type for list/search API endpoints */
+export interface PaginatedQueryParams extends PaginationParams, SearchParams {
+  sort_by?: string;
+  sort_order?: SortOrder;
 }

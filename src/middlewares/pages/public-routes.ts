@@ -1,4 +1,6 @@
-export const PUBLIC_PATHS: string[] = ["/", "/api/auth/*"];
+import { PUBLIC_PATHS } from "@/lib/config/routes";
+
+export { PUBLIC_PATHS };
 
 export function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
