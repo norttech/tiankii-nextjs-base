@@ -19,6 +19,7 @@ export const PUBLIC_PAGES: string[] = [
  */
 export const PUBLIC_API_ROUTES: string[] = [
   "/api/auth/*",
+  "/api/ping",
   // "/api/public/*",
 ];
 

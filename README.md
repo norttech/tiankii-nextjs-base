@@ -29,6 +29,10 @@ npm run dev
 ```
 src/
 ├── app/                        # Next.js App Router pages
+│   ├── api/
+│   │   ├── auth/[...nextauth]/ # NextAuth Route Handlers
+│   │   ├── ping/               # Public Health Check
+│   │   └── [...slug]/          # Catch-all API Fallback (returns JSON 404)
 │   ├── layout.tsx              # Root layout (wraps with <Providers>)
 │   ├── error.tsx               # Global error boundary
 │   └── not-found.tsx           # 404 page
