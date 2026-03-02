@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import { type Session } from "next-auth";
+import { NextResponse, type NextRequest } from "next/server";
 
 export function authMiddleware(
   req: NextRequest & { auth?: Session | null },

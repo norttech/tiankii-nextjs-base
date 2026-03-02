@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 
 export interface ApiErrorResponse {
   error: string;
-  details?: any;
+  details?: Record<string, unknown>;
   code?: string;
 }
 
@@ -26,24 +26,15 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
   if (error instanceof Error) {
     // Handle specific error messages or types here
     if (error.message.includes("not found")) {
-      return NextResponse.json(
-        { error: error.message, code: "NOT_FOUND" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: error.message, code: "NOT_FOUND" }, { status: 404 });
     }
 
     if (error.message.includes("Forbidden") || error.message.includes("permission")) {
-      return NextResponse.json(
-        { error: error.message, code: "FORBIDDEN" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: error.message, code: "FORBIDDEN" }, { status: 403 });
     }
-    
+
     // Default Error Object
-    return NextResponse.json(
-      { error: error.message, code: "INTERNAL_ERROR" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error.message, code: "INTERNAL_ERROR" }, { status: 500 });
   }
 
   // 3. Fallback for unknown errors

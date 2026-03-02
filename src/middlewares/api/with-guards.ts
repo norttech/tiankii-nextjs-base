@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/utils/error-handler";
 import type { SessionUser } from "@/types";
 import type { AppRole } from "@/auth.config";
-import { ZodSchema } from "zod";
+import { type ZodSchema } from "zod";
 
 export type GuardContext = {
   req: NextRequest;
@@ -84,7 +85,7 @@ export function withGuards(
       if (options.roles) {
         const res = await authGuard(ctx);
         if (res) return res;
-        
+
         const resRole = await roleGuard(options.roles)(ctx);
         if (resRole) return resRole;
       } else {

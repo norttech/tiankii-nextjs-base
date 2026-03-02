@@ -4,9 +4,18 @@ import type { PaginationParams, PaginatedResponse } from "@/types";
 export function getPaginationParams(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-  const page_size = Math.max(1, Math.min(100, parseInt(
-    searchParams.get("page_size") || searchParams.get("per_page") || searchParams.get("limit") || "10"
-  )));
+  const page_size = Math.max(
+    1,
+    Math.min(
+      100,
+      parseInt(
+        searchParams.get("page_size") ||
+          searchParams.get("per_page") ||
+          searchParams.get("limit") ||
+          "10",
+      ),
+    ),
+  );
   const skip = (page - 1) * page_size;
 
   return { page, page_size, skip };
@@ -21,10 +30,10 @@ export function createPaginatedResponse<R, M = R>(
 ): PaginatedResponse<M> {
   const { page, page_size } = params;
   const total_pages = Math.ceil(total / page_size) || 1;
-  
+
   const url = new URL(req.url);
   const baseUrl = `${url.origin}${url.pathname}`;
-  
+
   const createLink = (p: number) => {
     const freshParams = new URLSearchParams(url.searchParams);
     freshParams.set("page", p.toString());

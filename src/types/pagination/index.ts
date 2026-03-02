@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 export interface PaginationParams {
   page: number;
   page_size: number;

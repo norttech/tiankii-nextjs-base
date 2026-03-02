@@ -14,8 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "VeriStable | Proof of Reserves",
-  description:
-    "Real-time digital asset attestation and Proof of Reserves oracle.",
+  description: "Real-time digital asset attestation and Proof of Reserves oracle.",
 };
 
 export default function RootLayout({

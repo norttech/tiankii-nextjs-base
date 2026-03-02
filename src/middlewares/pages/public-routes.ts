@@ -1,7 +1,4 @@
-export const PUBLIC_PATHS: string[] = [
-  "/",
-  "/api/auth/*",
-];
+export const PUBLIC_PATHS: string[] = ["/", "/api/auth/*"];
 
 export function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;

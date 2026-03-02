@@ -7,6 +7,7 @@ export interface AssetRecord {
   ripcordDetails?: string[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AssetData extends AssetRecord {}
 
 export interface ProofOfReservesData {
