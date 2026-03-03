@@ -1,6 +1,6 @@
 # tiankii-next-base
 
-Production-ready Next.js 16 base template with NextAuth v5, next-intl, Shadcn UI, Prisma v7, Vitest, and Docker/Cloud Run deployment out of the box.
+Production-ready Next.js 16 base template with NextAuth v5, next-intl, Shadcn UI, Prisma v7, Playwright, and Docker/Cloud Run deployment out of the box.
 
 ---
 
@@ -12,7 +12,7 @@ Production-ready Next.js 16 base template with NextAuth v5, next-intl, Shadcn UI
 - **Prisma v7** + PostgreSQL (pg adapter, custom generated output)
 - **Shadcn/ui** + Tailwind CSS v4
 - **Zod** + React Hook Form
-- **Vitest** + React Testing Library
+- **Playwright** (E2E Testing)
 - **Husky** + lint-staged + Commitlint
 
 ---
@@ -78,9 +78,6 @@ src/
 │   ├── global.d.ts             # Global types (no import needed): SessionUser, Nullable<T>…
 │   └── …
 │
-├── test/
-│   └── setup.ts                # Vitest + RTL setup (mocks next/navigation, next-auth)
-│
 ├── auth.config.ts              # NextAuth base config
 ├── auth.ts                     # NextAuth instance
 └── proxy.ts                    # Middleware entry point (i18n + auth chain)
@@ -98,19 +95,20 @@ cloudbuild.yaml                 # Cloud Build → Artifact Registry → Cloud Ru
 
 ## Available Scripts
 
-| Command             | Description                 |
-| ------------------- | --------------------------- |
-| `yarn dev`          | Start dev server            |
-| `yarn build`        | Production build            |
-| `yarn lint`         | Run ESLint                  |
-| `yarn lint:fix`     | ESLint with auto-fix        |
-| `yarn format`       | Prettier format all files   |
-| `yarn format:check` | Prettier check (CI)         |
-| `yarn test`         | Vitest (run once)           |
-| `yarn test:watch`   | Vitest (watch mode)         |
-| `yarn db:generate`  | Generate Prisma client      |
-| `yarn db:migrate`   | Run Prisma migrations (dev) |
-| `yarn db:studio`    | Open Prisma Studio          |
+| Command               | Description                 |
+| --------------------- | --------------------------- |
+| `yarn dev`            | Start dev server            |
+| `yarn build`          | Production build            |
+| `yarn lint`           | Run ESLint                  |
+| `yarn lint:fix`       | ESLint with auto-fix        |
+| `yarn format`         | Prettier format all files   |
+| `yarn format:check`   | Prettier check (CI)         |
+| `yarn test:e2e`       | Playwright (run all)        |
+| `yarn test:e2e:ui`    | Playwright (interactive UI) |
+| `yarn test:e2e:debug` | Playwright (debug mode)     |
+| `yarn db:generate`    | Generate Prisma client      |
+| `yarn db:migrate`     | Run Prisma migrations (dev) |
+| `yarn db:studio`      | Open Prisma Studio          |
 
 ---
 
