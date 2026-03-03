@@ -4,15 +4,7 @@ export {};
 
 declare global {
   // ─── Auth types ─────────────────────────────────────────────────────────────
-  type AppRole = "admin" | "cliente" | "auditor";
-
-  type SessionUser = NonNullable<Session["user"]> & {
-    // Extended fields for the API context
-    isAdmin: boolean;
-    isAuditor: boolean;
-    isCliente: boolean;
-    role: AppRole;
-  };
+  type SessionUser = NonNullable<Session["user"]>;
 
   // ─── Primitive aliases ──────────────────────────────────────────────────────
   /** String UUID/ID — makes intent explicit in function signatures */

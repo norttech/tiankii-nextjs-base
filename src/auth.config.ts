@@ -8,21 +8,18 @@ export const mockUsers = [
     name: "Admin User",
     email: "admin@veristable.io",
     password: "admin123",
-    role: "admin",
   },
   {
     id: "2",
     name: "Client User",
     email: "emisor@veristable.io",
     password: "cliente123",
-    role: "cliente",
   },
   {
     id: "3",
     name: "Auditor User",
     email: "auditor@veristable.io",
     password: "auditor123",
-    role: "auditor",
   },
 ];
 
@@ -48,7 +45,6 @@ export const authConfig = {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role as AppRole,
           };
         }
 
@@ -59,14 +55,12 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
         token.accessToken = "mock-token-" + (user as any).id;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.role) {
-        (session.user as any).role = token.role as AppRole;
+      if (session.user) {
         session.accessToken = token.accessToken as string;
       }
       return session;

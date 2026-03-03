@@ -47,7 +47,9 @@ This skill defines a standardized workflow for scaffolding new features/modules 
 ## 4. API Implementation
 
 - Implement robust Next.js App Router API endpoints enforcing the audit fields (injecting user IDs from the session).
-- **CRITICAL**: Return standardized JSON responses for all endpoints. For paginated List (`GET`) endpoints, you MUST import and return `createPaginatedNextResponse` from `@/lib/utils/pagination`. For single records, use `{ data, error }`. Provide standard HTTP status codes (400, 404, 500).
+- **CRITICAL**: All route handlers MUST be wrapped with `withGuards` from `@/middlewares/api/with-guards`. Do NOT use `try/catch` — errors are centrally handled by `withGuards` → `handleApiError`.
+- **CRITICAL**: For routes with dynamic segments (`[id]`), type the second argument using `RouteContext<'/api/[module]/[id]'>`. This type is **globally available** after `next build` or `next typegen` — **do NOT import it**.
+- **CRITICAL**: Return standardized JSON responses. For paginated List endpoints use `createPaginatedNextResponse` from `@/lib/utils/pagination`. For single records, return the record **directly** (no `{ data }` wrapper). For 404s, throw `new NotFoundError()` from `@/lib/utils/error-handler`.
 - `src/app/api/[module]/route.ts`:
   - `GET` (List): MUST implement pagination, sorting, and search filtering. MUST filter out soft-deleted records (`deletedAt: null` AND `isActive: true`) by default. MUST use `createPaginatedNextResponse(data, total, { page, pageSize })` from `@/lib/utils/pagination` to format and return the data.
   - `POST` (Create): Validate payload with Zod schemas, populate `createdBy`.

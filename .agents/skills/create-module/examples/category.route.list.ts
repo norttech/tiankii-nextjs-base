@@ -4,55 +4,40 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { QueryCategorySchema, CreateCategorySchema } from "@/lib/schemas/category/category.schema";
 import { getPaginationParams, createPaginatedNextResponse } from "@/lib/utils/pagination";
+import { withGuards } from "@/middlewares/api/with-guards";
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const params = QueryCategorySchema.parse(Object.fromEntries(searchParams));
+// GET /api/categories — List with pagination, sorting, and search
+export const GET = withGuards({}, async ({ req }) => {
+  const params = QueryCategorySchema.parse(Object.fromEntries(req.nextUrl.searchParams));
+  const { page, pageSize, skip, take } = getPaginationParams(req);
 
-    // Pagination: validated by Zod via PaginationSchema, Prisma-ready skip/take included
-    const { page, pageSize, skip, take } = getPaginationParams(request);
-
-    const where = {
-      isActive: true,
-      deletedAt: null,
+  const where = {
+    isActive: true,
+    deletedAt: null,
+    ...(params.search && {
       OR: [
         { name: { contains: params.search, mode: "insensitive" } },
         { description: { contains: params.search, mode: "insensitive" } },
       ],
-    };
+    }),
+  };
 
-    const [data, total] = await Promise.all([
-      prisma.category.findMany({
-        where,
-        skip,
-        take,
-        orderBy: params.sort,
-      }),
-      prisma.category.count({ where }),
-    ]);
+  const [data, total] = await Promise.all([
+    prisma.category.findMany({ where, skip, take, orderBy: params.sort }),
+    prisma.category.count({ where }),
+  ]);
 
-    return createPaginatedNextResponse(data, total, { page, pageSize });
-  } catch (error) {
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
-  }
-}
+  return createPaginatedNextResponse(data, total, { page, pageSize });
+});
 
+// POST /api/categories — Create
+export const POST = withGuards({ schema: CreateCategorySchema }, async ({ user, body }) => {
+  const category = await prisma.category.create({
+    data: {
+      ...body,
+      createdBy: user.id,
+    },
+  });
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const payload = CreateCategorySchema.parse(body);
-
-    const category = await prisma.category.create({
-      data: {
-        ...payload,
-        createdBy: "system-user-id", // In actual app, get from session
-      },
-    });
-
-    return NextResponse.json({ data: category }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Validation failed" }, { status: 400 });
-  }
-}
+  return NextResponse.json(category, { status: 201 });
+});

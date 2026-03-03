@@ -1,37 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { type z } from "zod";
 import { auth } from "@/auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/utils/error-handler";
-import { type ZodSchema } from "zod";
 
-// AppRole and SessionUser are now defined globally in src/types/global.d.ts
-
-export type GuardContext = {
+export type GuardContext<B = unknown> = {
   req: NextRequest;
   user?: SessionUser;
-  body?: any;
+  body?: B;
 };
 
-export type GuardFunction = (ctx: GuardContext) => Promise<Response | void>;
+export type GuardFunction = (ctx: GuardContext<any>) => Promise<Response | void>;
 
-export interface GuardOptions {
-  roles?: AppRole[];
-  schema?: ZodSchema;
+export interface GuardOptions<S extends z.ZodType = z.ZodType> {
+  schema?: S;
   guards?: GuardFunction[];
-}
-
-/**
- * Transforms the raw session user into an extended SessionUser object.
- */
-function transformUser(rawUser: any): SessionUser {
-  const role = rawUser.role as AppRole;
-  return {
-    ...rawUser,
-    role,
-    isAdmin: role === "admin",
-    isAuditor: role === "auditor",
-    isCliente: role === "cliente",
-  };
 }
 
 /**
@@ -45,25 +28,13 @@ export const authGuard: GuardFunction = async (ctx) => {
       { status: 401 },
     );
   }
-  ctx.user = transformUser(session.user);
-};
-
-/**
- * Guard Factory: Validates that the user has one of the required roles.
- */
-export const roleGuard = (allowedRoles: AppRole[]): GuardFunction => {
-  return async (ctx) => {
-    if (!ctx.user) return; // Should be preceded by authGuard
-    if (!allowedRoles.includes((ctx.user as any).role)) {
-      throw new Error(`Forbidden. Required roles: ${allowedRoles.join(", ")}`);
-    }
-  };
+  ctx.user = session.user as SessionUser;
 };
 
 /**
  * Guard Factory: Validates the request body against a Zod schema.
  */
-export const schemaGuard = (schema: ZodSchema): GuardFunction => {
+export const schemaGuard = (schema: z.ZodType): GuardFunction => {
   return async (ctx) => {
     const rawBody = await ctx.req.json();
     ctx.body = schema.parse(rawBody);
@@ -71,29 +42,23 @@ export const schemaGuard = (schema: ZodSchema): GuardFunction => {
 };
 
 /**
- * The Guard Composer (HOF)
- * Wraps an API handler with centralized error handling and a chain of guards.
+ * The Guard Composer (HOF).
+ * Generic on the Zod schema so `ctx.body` is strongly typed as `z.infer<S>` in the handler.
  */
-export function withGuards(
-  options: GuardOptions,
-  handler: (ctx: Required<GuardContext>) => Promise<Response>,
+export function withGuards<S extends z.ZodType = z.ZodType>(
+  options: GuardOptions<S>,
+  handler: (
+    ctx: GuardContext<z.infer<S>> & { user: SessionUser; body: z.infer<S> },
+    ...args: any[]
+  ) => Promise<Response>,
 ) {
-  return async (req: NextRequest) => {
-    const ctx: GuardContext = { req };
+  return async (req: NextRequest, ...args: any[]) => {
+    const ctx: GuardContext<any> = { req };
 
     try {
-      // 1. Run internal standard guards first if specified in options
-      if (options.roles) {
-        const res = await authGuard(ctx);
-        if (res) return res;
-
-        const resRole = await roleGuard(options.roles)(ctx);
-        if (resRole) return resRole;
-      } else {
-        // Just auth if no specific roles but we want a user object
-        const res = await authGuard(ctx);
-        if (res) return res;
-      }
+      // 1. Always authenticate
+      const authRes = await authGuard(ctx);
+      if (authRes) return authRes;
 
       // 2. Run schema validation if specified
       if (options.schema) {
@@ -104,12 +69,15 @@ export function withGuards(
       if (options.guards) {
         for (const guard of options.guards) {
           const res = await guard(ctx);
-          if (res) return res; // Short-circuit if guard returns a Response
+          if (res) return res;
         }
       }
 
       // 4. Execute the final handler
-      return await handler(ctx as Required<GuardContext>);
+      return await handler(
+        ctx as GuardContext<z.infer<S>> & { user: SessionUser; body: z.infer<S> },
+        ...args,
+      );
     } catch (error) {
       return handleApiError(error);
     }
