@@ -1,0 +1,44 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build Image"
+    args:
+      - "build"
+      # Add NEXT_PUBLIC_* build args here as needed, e.g.:
+      # - "--build-arg"
+      # - "NEXT_PUBLIC_API_URL=$_NEXT_PUBLIC_API_URL"
+      - "-t"
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_CLOUD_RUN_PROJECT:$SHORT_SHA"
+      - "."
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Image"
+    args:
+      - "push"
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_CLOUD_RUN_PROJECT:$SHORT_SHA"
+    waitFor: ["Build Image"]
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+    id: "Deploy to Cloud Run"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "$_CLOUD_RUN_PROJECT"
+      - "--image=$_REGION-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_CLOUD_RUN_PROJECT:$SHORT_SHA"
+      - "--region=$_REGION"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--port=8080"
+      # Non-secret runtime env vars passed at deploy time
+      - "--update-env-vars=GCP_REGION=$_REGION,GCP_PROJECT=$PROJECT_ID"
+      # Note: add AUTH_SECRET, DATABASE_URL, etc. directly in the
+      # Cloud Run service settings via GCP Console or CLI.
+    waitFor: ["Push Image"]
+
+substitutions:
+  _CLOUD_RUN_PROJECT: tiankii-base
+  _REGION: us-central1
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  substitutionOption: ALLOW_LOOSE

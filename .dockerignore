@@ -1,0 +1,35 @@
+# Dependencies / dev files
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (we copy only what's needed via COPY --from=builder)
+.next
+.turbo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Version control
+.git
+.gitignore
+
+# Editor / OS
+.vscode
+.idea
+*.log
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+vitest.config.ts
+src/test
+
+# CI / Docker
+Dockerfile
+.dockerignore
+cloudbuild.yaml
