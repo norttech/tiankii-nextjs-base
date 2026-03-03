@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     "node_modules/**",
     // Shadcn auto-generated files — do not lint these
     "src/components/ui/**",
+    // Agents
+    ".agents/**",
   ]),
   // Prettier integration (must be last to override formatting rules)
   eslintPluginPrettierRecommended,

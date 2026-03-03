@@ -16,3 +16,6 @@ pnpm-lock.yaml
 # Dotfiles & config
 .env*
 *.log
+
+# Agents
+.agents/

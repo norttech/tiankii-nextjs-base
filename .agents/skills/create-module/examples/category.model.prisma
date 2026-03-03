@@ -1,0 +1,17 @@
+model Category {
+    id          String  @id @default(cuid())
+    name        String
+    description String?
+    color       String? @default("#000000")
+
+    // MANDATORY Audit Fields
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    createdBy String?
+    updatedBy String?
+    deletedAt DateTime?
+    deletedBy String?
+    isActive  Boolean   @default(true)
+
+    @@map("categories")
+}
