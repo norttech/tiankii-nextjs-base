@@ -1,7 +1,8 @@
 // @ts-nocheck
 /* eslint-disable */
+"use client";
 import { useMemo } from "react";
-import { Link } from "@/navigation";
+import { Link } from "@/lib/i18n/routing";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -26,10 +27,13 @@ export default function CategoryListPage() {
   const t = useTranslations("categories");
   const queryClient = useQueryClient();
 
-  const { data: categories, isLoading } = useQuery({
+  // API returns PaginatedResponse<Category> — access .data for the records array
+  const { data, isLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: () => fetch("/api/categories").then((res) => res.json()),
   });
+
+  const categories = data?.data ?? [];
 
   const softDeleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/categories/${id}`, { method: "DELETE" }),
@@ -43,6 +47,7 @@ export default function CategoryListPage() {
     mutationFn: (id: string) =>
       fetch(`/api/categories/duplicate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       }),
     onSuccess: () => {
@@ -74,7 +79,7 @@ export default function CategoryListPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {categories?.data?.map((category) => (
+            {categories.map((category) => (
               <TableRow key={category.id}>
                 <TableCell className="font-medium">{category.name}</TableCell>
                 <TableCell>{category.description || "-"}</TableCell>

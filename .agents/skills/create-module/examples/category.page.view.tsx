@@ -1,8 +1,9 @@
 // @ts-nocheck
 /* eslint-disable */
+"use client";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter } from "@/navigation";
+import { Link, useRouter } from "@/lib/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, Printer, Copy, ArrowLeft } from "lucide-react";
@@ -13,6 +14,7 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  // API returns the category record directly — no { data } wrapper
   const { data: category, isLoading } = useQuery({
     queryKey: ["category", params.id],
     queryFn: () => fetch(`/api/categories/${params.id}`).then((res) => res.json()),
@@ -31,6 +33,7 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
     mutationFn: (id: string) =>
       fetch(`/api/categories/duplicate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       }),
     onSuccess: () => {
@@ -41,12 +44,13 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
   });
 
   if (isLoading) return <div>Loading...</div>;
-  if (!category?.data) return <div>{t("notifications.not_found")}</div>;
+  if (!category) return <div>{t("notifications.not_found")}</div>;
 
-  const { name, description, color, createdAt, isActive } = category.data;
+  const { name, description, createdAt, isActive } = category;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header row */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" asChild>
           <Link href="/categories">
@@ -78,12 +82,10 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
         </div>
       </div>
 
+      {/* Record detail card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <span className="w-4 h-4 rounded-full" style={{ backgroundColor: color || "#ccc" }} />
-            {name}
-          </CardTitle>
+          <CardTitle>{name}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -97,13 +99,13 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
               <span className="text-sm font-semibold block uppercase tracking-wider text-muted-foreground">
                 {t("fields.created_at")}
               </span>
-              <p className="text-md">{new Date(createdAt).toLocaleDateString()}</p>
+              <p>{new Date(createdAt).toLocaleDateString()}</p>
             </div>
             <div>
               <span className="text-sm font-semibold block uppercase tracking-wider text-muted-foreground">
                 {t("fields.status")}
               </span>
-              <p className="text-md">{isActive ? t("status.active") : t("status.inactive")}</p>
+              <p>{isActive ? t("status.active") : t("status.inactive")}</p>
             </div>
           </div>
         </CardContent>

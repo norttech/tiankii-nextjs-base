@@ -10,6 +10,8 @@ This skill defines the canonical workflow for scaffolding a new feature module. 
 - `category.schema.ts` — Zod schemas (Create, Update, Query)
 - `category.route.list.ts` — `GET` list + `POST` create
 - `category.route.single.ts` — `GET` / `PATCH` / `DELETE` by ID
+- `category.page.list.tsx` — List page (client component, react-query)
+- `category.page.view.tsx` — View page (client component, react-query)
 
 ---
 
@@ -114,10 +116,21 @@ See `examples/category.route.list.ts` and `examples/category.route.single.ts` fo
 
 Create pages under `src/app/[locale]/[module]/`. Use `react-hook-form` + `@hookform/resolvers/zod` with the Zod schemas from Step 4.
 
-- **List page** (`page.tsx`) — data table with pagination, sorting, search. Global **"Add New"** button. Per-row **Actions** dropdown: View, Edit, Duplicate, Delete (with confirmation).
-- **View page** (`[id]/page.tsx`) — all fields displayed. Top action buttons: Edit, Duplicate, Print, Delete.
-- **Edit form** (`[id]/edit/page.tsx`) — pre-filled form, inline validation errors.
-- **Create form** (`create/page.tsx`) — empty form, client-side Zod validation.
+### Conventions (CRITICAL)
+
+- **Client Components** — UI pages are `"use client"` components. Use `@tanstack/react-query` (`useQuery`, `useMutation`) for all data fetching and mutations against API routes. **Never import or call `prisma` in any component file.**
+- **Navigation** — import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`. Never from `next/link` or `next/navigation` directly.
+- **Toasts** — use `react-hot-toast`: `import { toast } from "react-hot-toast"`.
+- **i18n** — use `useTranslations` (sync) from `next-intl`.
+- **Response shape** — list endpoints return `PaginatedResponse<T>`, access records via `data?.data`. Single-record endpoints return the record directly — no `.data` unwrap.
+- **Forms** — use `react-hook-form` + `@hookform/resolvers/zod` with the Zod schemas from Step 4.
+
+### Pages to create
+
+- **List page** (`page.tsx`) — uses `useQuery` to fetch from `GET /api/[module]`. Data table with pagination, sorting, search. Global **"Add New"** button. Per-row **Actions** dropdown: View, Edit, Duplicate, Delete.
+- **View page** (`[id]/page.tsx`) — uses `useQuery` to fetch from `GET /api/[module]/[id]`. Top action buttons: Edit, Duplicate, Print, Delete.
+- **Edit form** (`[id]/edit/page.tsx`) — pre-filled form using `useQuery` + `useMutation`, inline validation errors.
+- **Create form** (`create/page.tsx`) — empty form with `useMutation`, client-side Zod validation.
 
 ---
 
