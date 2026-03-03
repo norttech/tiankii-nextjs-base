@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable */
 import { z } from "zod";
+import { QueryBaseSchema } from "@/lib/schemas/common";
 
 export const CategorySchema = z.object({
   id: z.string().optional(),
@@ -19,12 +20,9 @@ export const UpdateCategorySchema = CategorySchema.partial().omit({
   id: true,
 });
 
-export const QueryCategorySchema = z.object({
-  page: z.coerce.number().default(1),
-  limit: z.coerce.number().default(10),
-  search: z.string().optional(),
-  sortBy: z.string().default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+
+export const QueryCategorySchema = QueryBaseSchema.extend({
+  // Add module-specific query filters here if needed
 });
 
 export type Category = z.infer<typeof CategorySchema>;

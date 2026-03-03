@@ -3,13 +3,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { QueryCategorySchema, CreateCategorySchema } from "@/lib/schemas/category/category.schema";
+import { getPaginationParams, createPaginatedNextResponse } from "@/lib/utils/pagination";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const params = QueryCategorySchema.parse(Object.fromEntries(searchParams));
 
-    const skip = (params.page - 1) * params.limit;
+    // Pagination: validated by Zod via PaginationSchema, Prisma-ready skip/take included
+    const { page, pageSize, skip, take } = getPaginationParams(request);
 
     const where = {
       isActive: true,
@@ -24,25 +26,18 @@ export async function GET(request: Request) {
       prisma.category.findMany({
         where,
         skip,
-        take: params.limit,
-        orderBy: { [params.sortBy]: params.sortOrder },
+        take,
+        orderBy: params.sort,
       }),
       prisma.category.count({ where }),
     ]);
 
-    return NextResponse.json({
-      data,
-      pagination: {
-        total,
-        page: params.page,
-        limit: params.limit,
-        totalPages: Math.ceil(total / params.limit),
-      },
-    });
+    return createPaginatedNextResponse(data, total, { page, pageSize });
   } catch (error) {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
+
 
 export async function POST(request: Request) {
   try {

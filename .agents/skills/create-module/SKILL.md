@@ -38,18 +38,18 @@ This skill defines a standardized workflow for scaffolding new features/modules 
 
 ## 3. Schema & Validation
 
-- Create a validation schema (e.g., using Zod) in `src/lib/schemas/[module]/[module].schema.ts`.
+- Create a validation schema (using Zod) in `src/lib/schemas/[module]/[module].schema.ts`.
 - Include specific schemas for:
-  - **Create**: Omit auto-generated audit fields (like `createdAt`, `updatedAt`, `deletedAt`).
+  - **Create**: Omit auto-generated audit fields (`createdAt`, `updatedAt`, `deletedAt`, etc.).
   - **Update**: Make all fields optional, excluding immutable audit fields.
-  - **Query**: Filters for pagination, sorting (`sortBy`, `sortOrder`), and search/filters.
+  - **Query**: MUST extend `QueryBaseSchema` imported from `src/lib/schemas/common` (which provides `page`, `pageSize`, `search`, and a `sort` parser supporting multiple fields like `+name,-createdAt`). Add module-specific filters if needed.
 
 ## 4. API Implementation
 
 - Implement robust Next.js App Router API endpoints enforcing the audit fields (injecting user IDs from the session).
-- **CRITICAL**: Return standardized JSON responses for all endpoints (e.g., `{ data, pagination, error }`) and handle standard HTTP status codes (400, 404, 500).
+- **CRITICAL**: Return standardized JSON responses for all endpoints. For paginated List (`GET`) endpoints, you MUST import and return `createPaginatedNextResponse` from `@/lib/utils/pagination`. For single records, use `{ data, error }`. Provide standard HTTP status codes (400, 404, 500).
 - `src/app/api/[module]/route.ts`:
-  - `GET` (List): MUST implement pagination, sorting, and search filtering. MUST filter out soft-deleted records (`deletedAt: null` AND `isActive: true`) by default.
+  - `GET` (List): MUST implement pagination, sorting, and search filtering. MUST filter out soft-deleted records (`deletedAt: null` AND `isActive: true`) by default. MUST use `createPaginatedNextResponse(data, total, { page, pageSize })` from `@/lib/utils/pagination` to format and return the data.
   - `POST` (Create): Validate payload with Zod schemas, populate `createdBy`.
 - `src/app/api/[module]/[id]/route.ts`:
   - `GET` (Read): Retrieve single record.
