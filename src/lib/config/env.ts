@@ -5,6 +5,9 @@ const envSchema = z.object({
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
   AUTH_URL: z.url("AUTH_URL must be a valid URL").optional(),
 
+  // ─── Database ─────────────────────────────────────────────────────────────
+  DATABASE_URL: z.url("DATABASE_URL must be a valid connection string"),
+
   // ─── App ─────────────────────────────────────────────────────────────────
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 

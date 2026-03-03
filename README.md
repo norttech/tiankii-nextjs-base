@@ -1,15 +1,18 @@
 # tiankii-next-base
 
-Base Next.js template with NextAuth v5, Shadcn, custom fetch proxy, API guards, and pre-configured tooling.
+Production-ready Next.js 16 base template with NextAuth v5, next-intl, Shadcn UI, Prisma v7, Vitest, and Docker/Cloud Run deployment out of the box.
 
 ---
 
 ## Stack
 
-- **Next.js 16** (App Router)
+- **Next.js 16** (App Router, standalone output)
 - **NextAuth v5** (JWT, Credentials provider)
+- **next-intl** (i18n: `en` / `es`)
+- **Prisma v7** + PostgreSQL (pg adapter, custom generated output)
 - **Shadcn/ui** + Tailwind CSS v4
 - **Zod** + React Hook Form
+- **Vitest** + React Testing Library
 - **Husky** + lint-staged + Commitlint
 
 ---
@@ -18,8 +21,9 @@ Base Next.js template with NextAuth v5, Shadcn, custom fetch proxy, API guards, 
 
 ```bash
 cp .env.example .env.local
-npm install        # also runs `husky` via prepare script
-npm run dev
+yarn install        # also runs `husky` via prepare script
+yarn db:generate    # generate Prisma client
+yarn dev
 ```
 
 ---
@@ -28,14 +32,14 @@ npm run dev
 
 ```
 src/
-├── app/                        # Next.js App Router pages
-│   ├── api/
-│   │   ├── auth/[...nextauth]/ # NextAuth Route Handlers
-│   │   ├── ping/               # Public Health Check
-│   │   └── [...slug]/          # Catch-all API Fallback (returns JSON 404)
-│   ├── layout.tsx              # Root layout (wraps with <Providers>)
-│   ├── error.tsx               # Global error boundary
-│   └── not-found.tsx           # 404 page
+├── app/
+│   ├── [locale]/               # All pages live under the locale segment
+│   │   ├── layout.tsx          # Root layout (NextIntlClientProvider + Providers)
+│   │   └── page.tsx            # Home page (uses useTranslations)
+│   └── api/
+│       ├── auth/[...nextauth]/ # NextAuth Route Handlers
+│       ├── ping/               # Public Health Check → GET /api/ping
+│       └── [...slug]/          # Catch-all API Fallback (returns JSON 404)
 │
 ├── components/
 │   ├── providers/              # <Providers> wrapper (SessionProvider, etc.)
@@ -45,48 +49,68 @@ src/
 │   ├── api/                    # Fetch client factories
 │   │   └── core/
 │   │       ├── apiFetch.ts     # Base fetch with error handling
-│   │       └── createFetchClient.ts  # Private/public API factories (+Bearer token)
+│   │       └── createFetchClient.ts
 │   ├── config/                 # Application configuration
-│   │   ├── env.ts              # Zod-validated env variables
-│   │   └── routes.ts           # Security Route Configuration (PUBLIC_PAGES, PUBLIC_API_ROUTES)
+│   │   ├── env.ts              # Zod-validated env variables (AUTH_SECRET, DATABASE_URL…)
+│   │   └── routes.ts           # Security route config (PUBLIC_PAGES, PUBLIC_API_ROUTES)
+│   ├── i18n/                   # Internationalization
+│   │   ├── routing.ts          # Locale definitions + createNavigation
+│   │   ├── request.ts          # next-intl server config
+│   │   └── messages/
+│   │       ├── en.json         # English translations
+│   │       └── es.json         # Spanish translations
+│   ├── db.ts                   # Prisma singleton client (pg adapter)
 │   └── utils/
 │       ├── cn.ts               # Tailwind class merger
 │       ├── error-handler.ts    # Typed error classes + handleApiError
 │       └── pagination.ts       # getPaginationParams + createPaginatedResponse
 │
 ├── middlewares/
-│   ├── index.ts                # Barrel
+│   ├── index.ts
 │   ├── api/
-│   │   └── with-guards.ts      # withGuards HOF (auth + role + schema + custom)
+│   │   └── with-guards.ts      # withGuards HOF (auth + role + schema validation)
 │   └── pages/
-│       ├── auth-middleware.ts  # Page/API auth redirect middleware
-│       └── public-routes.ts    # isPublicRoute helper (sources from config/routes)
+│       ├── auth-middleware.ts  # Auth redirect / JSON 401 for API
+│       ├── i18n-middleware.ts  # next-intl locale injection
+│       └── public-routes.ts    # isPublicRoute helper
 │
 ├── types/
-│   ├── api/index.ts            # ApiErrorResponse, ApiSuccessResponse<T>
-│   ├── auth/index.ts           # SessionUser type
-│   ├── asset/index.ts          # Asset types
-│   ├── pagination/index.ts     # PaginatedResponse, PaginationParams
-│   ├── index.ts                # Barrel
-│   └── global.d.ts             # Global type definitions
+│   ├── global.d.ts             # Global types (no import needed): SessionUser, Nullable<T>…
+│   └── …
 │
-├── auth.config.ts              # NextAuth config + AppRole enum + mock users
-├── auth.ts                     # NextAuth instance (handlers, signIn, signOut, auth)
-└── proxy.ts                    # Next.js middleware entry point
+├── test/
+│   └── setup.ts                # Vitest + RTL setup (mocks next/navigation, next-auth)
+│
+├── auth.config.ts              # NextAuth base config
+├── auth.ts                     # NextAuth instance
+└── proxy.ts                    # Middleware entry point (i18n + auth chain)
+
+prisma/
+├── schema.prisma               # provider: prisma-client, output: ./generated/prisma
+└── generated/                  # ← gitignored, re-generated via `yarn db:generate`
+
+prisma.config.ts                # Prisma v7 config (schema path + DATABASE_URL)
+Dockerfile                      # Multi-stage build (deps → builder → runner)
+cloudbuild.yaml                 # Cloud Build → Artifact Registry → Cloud Run
 ```
 
 ---
 
 ## Available Scripts
 
-| Command                | Description               |
-| ---------------------- | ------------------------- |
-| `npm run dev`          | Start dev server          |
-| `npm run build`        | Production build          |
-| `npm run lint`         | Run ESLint                |
-| `npm run lint:fix`     | ESLint with auto-fix      |
-| `npm run format`       | Prettier format all files |
-| `npm run format:check` | Prettier check (CI)       |
+| Command             | Description                 |
+| ------------------- | --------------------------- |
+| `yarn dev`          | Start dev server            |
+| `yarn build`        | Production build            |
+| `yarn lint`         | Run ESLint                  |
+| `yarn lint:fix`     | ESLint with auto-fix        |
+| `yarn format`       | Prettier format all files   |
+| `yarn format:check` | Prettier check (CI)         |
+| `yarn test`         | Vitest (run once)           |
+| `yarn test:watch`   | Vitest (watch mode)         |
+| `yarn db:generate`  | Generate Prisma client      |
+| `yarn db:migrate`   | Run Prisma migrations (dev) |
+| `yarn db:studio`    | Open Prisma Studio          |
 
 ---
 
@@ -95,21 +119,53 @@ src/
 Uses [Conventional Commits](https://www.conventionalcommits.org/). Enforced via Commitlint + Husky.
 
 ```
-<type>(<scope>): <subject>
+<type>(<scope>): <subject>   ← subject must be lowercase
 ```
 
 Allowed types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore` `revert`
 
 ---
 
-## Error Classes
+## Internationalization
 
-Use typed error classes instead of strings in API handlers:
+All pages live under `src/app/[locale]/`. Translations are in `src/lib/i18n/messages/`.
+
+```ts
+import { useTranslations } from "next-intl";
+
+export default function Page() {
+  const t = useTranslations("Index");
+  return <h1>{t("title")}</h1>;
+}
+```
+
+Add new keys to both `en.json` and `es.json`. Supported locales are defined in `src/lib/i18n/routing.ts`.
+
+---
+
+## Database (Prisma)
+
+```ts
+import { db } from "@/lib/db";
+
+// Usage inside Server Components, API routes, or Server Actions:
+const users = await db.user.findMany();
+```
+
+After adding models to `prisma/schema.prisma`, re-generate the client:
+
+```bash
+yarn db:generate
+yarn db:migrate   # creates a migration and applies it
+```
+
+---
+
+## Error Classes
 
 ```ts
 import { NotFoundError, ForbiddenError } from "@/lib/utils/error-handler";
 
-// Inside a withGuards handler:
 throw new NotFoundError("Product not found"); // → 404
 throw new ForbiddenError(); // → 403
 ```
@@ -130,9 +186,31 @@ export const GET = withGuards({ roles: ["admin"] }, async ({ user }) => {
 
 ## Env Variables
 
-Validated via Zod at startup in `src/env.ts`. Add new required variables there.
+Validated via Zod at startup in `src/lib/config/env.ts`. The app will fail fast if any required variable is missing.
 
 ```bash
 AUTH_SECRET=your-secret-here
-AUTH_URL=http://localhost:3000
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+```
+
+---
+
+## API Endpoints
+
+| Method | Path                      | Auth   | Description           |
+| ------ | ------------------------- | ------ | --------------------- |
+| GET    | `/api/ping`               | Public | Health check (`pong`) |
+| ANY    | `/api/auth/[...nextauth]` | Public | NextAuth handlers     |
+| ANY    | `/api/[...slug]`          | —      | Returns JSON 404      |
+
+---
+
+## Deployment
+
+Build and deploy to Cloud Run using the included `cloudbuild.yaml`. Set `AUTH_SECRET` and `DATABASE_URL` directly in the Cloud Run service environment variables.
+
+```bash
+# Local Docker build test:
+docker build -t tiankii-base .
+docker run -p 8080:8080 --env-file .env.local tiankii-base
 ```

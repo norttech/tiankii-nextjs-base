@@ -27,10 +27,12 @@ const config: UserConfig = {
     "scope-case": [2, "always", "lower-case"],
     // Subject cannot be empty
     "subject-empty": [2, "never"],
-    // Subject must be lowercase
-    "subject-case": [2, "always", "lower-case"],
+    // Subject must be in sentence case (e.g. "Fix a bug.")
+    "subject-case": [2, "always", "sentence-case"],
+    // Allow subject to end with a period
+    "subject-full-stop": [0, "always", "."],
     // Header max length (type + scope + subject)
-    "header-max-length": [2, "always", 120],
+    "header-max-length": [2, "always", 150],
     // Body must have a blank line before it
     "body-leading-blank": [1, "always"],
     // Footer must have a blank line before it
