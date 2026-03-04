@@ -1,6 +1,5 @@
 // @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 "use client";
-import { use } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Category } from "@prisma/client";
@@ -40,24 +39,23 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export default function CategoryViewPage(props: PageProps<"/categories/[id]">) {
-  const params = use(props.params);
+export function CategoryView({ id }: { id: string }) {
   const t = useTranslations("categories");
   const router = useRouter();
   const queryClient = useQueryClient();
 
   // API returns the category record directly — no { data } wrapper
   const { data: category, isLoading, isError } = useQuery<Category>({
-    queryKey: ["category", params.id],
+    queryKey: ["category", id],
     queryFn: () =>
-      fetch(`/api/categories/${params.id}`).then((res) => {
+      fetch(`/api/categories/${id}`).then((res) => {
         if (!res.ok) throw new Error("Not found");
         return res.json();
       }),
   });
 
   const softDeleteMutation = useMutation({
-    mutationFn: () => fetch(`/api/categories/${params.id}`, { method: "DELETE" }),
+    mutationFn: () => fetch(`/api/categories/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       toast.success(t("notifications.deleted"));
@@ -71,7 +69,7 @@ export default function CategoryViewPage(props: PageProps<"/categories/[id]">) {
       fetch(`/api/categories/duplicate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: params.id }),
+        body: JSON.stringify({ id: id }),
       }).then((res) => res.json()),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -128,7 +126,7 @@ export default function CategoryViewPage(props: PageProps<"/categories/[id]">) {
 
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" asChild>
-            <Link href={`/categories/${params.id}/edit`}>
+            <Link href={`/categories/${id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               {t("actions.edit")}
             </Link>

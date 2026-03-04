@@ -48,7 +48,7 @@ import { toast } from "react-hot-toast";
 
 const PAGE_SIZE = 20;
 
-export default function CategoryListPage(props: PageProps<"/categories">) {
+export function CategoryList() {
   const t = useTranslations("categories");
   const queryClient = useQueryClient();
 

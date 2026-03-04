@@ -112,22 +112,25 @@ Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module
 
 **Pages to create** under `src/app/[locale]/[module]/`:
 
-| Page | Path | Purpose |
-|------|------|---------|
-| List | `page.tsx` | Fetch + display all records with search, sort, pagination |
-| View | `[id]/page.tsx` | Display a single record with all its fields |
-| Create | `create/page.tsx` | Empty form to create a record |
-*(Note: Edit forms should render inside a `Sheet` (drawer) drawn from the List view, rather than requiring a dedicated edit page).*
+Every page MUST be a **Server Component**. All client-side logic, state, and fetching MUST be moved to a corresponding component in `src/components/modules/[module]/`.
+
+| Page | Path | Client Component | Purpose |
+|------|------|------------------|---------|
+| List | `page.tsx` | `[Module]List.tsx` | Main listing view with search/sort/pagination |
+| View | `[id]/page.tsx` | `[Module]View.tsx` | Detailed view of a single record |
+| Create | `create/page.tsx` | `[Module]Form.tsx` | Create form (can also be reused for edit) |
 
 ### Hard rules (non-negotiable)
 
-- **`"use client"`** on all UI pages — never run Prisma in a component.
-- **Data fetching** — `useQuery` / `useMutation` from `@tanstack/react-query`. All calls go through the API routes created in Step 5.
+- **Server Components for Pages** — `page.tsx` files MUST NOT have `"use client"`. They should handle metadata, static SEO content, and pass necessary props to client components.
+- **Client Components for UI** — All interactivity, `useQuery`, `useMutation`, and hooks MUST live in client components under `src/components/modules/[module]/`.
+- **Data fetching** — `useQuery` / `useMutation` from `@tanstack/react-query` inside client components. All calls go through the API routes created in Step 5.
 - **Navigation** — always import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`.
 - **Toasts** — `import { toast } from "react-hot-toast"` for success/error feedback.
-- **i18n** — all user-visible strings must use `useTranslations` from `next-intl`.
+- **i18n** — use `getTranslations` (server) or `useTranslations` (client) from `next-intl`.
 - **Forms** — `react-hook-form` + `@hookform/resolvers/zod` + Zod schemas. Show inline field-level validation errors.
-- **Type safety** — heavily type page parameters using Next.js `PageProps<"/route">` and `useQuery<PaginatedResponse<Type>>` where appropriate.
+- **Type safety** — Every page component and `generateMetadata` function MUST use the global `PageProps<"/route-literal">` helper.
+- **Async Props** — In Next.js 16+, `params` and `searchParams` are Promises. You MUST `await` them before access (e.g., `const { id } = await props.params`).
 - **Response shape** — list endpoints return `PaginatedResponse<T>`. Batch operations (like delete) send an array of IDs.
 - **Required UI behaviours**:
   - **List Actions**: Search input, sortable columns, pagination controls, "Add New" button.

@@ -1,14 +1,20 @@
-import { useTranslations } from "next-intl";
+import { HeroSection } from "@/components/home/hero-section";
+import { getTranslations } from "next-intl/server";
 
-export default function Home() {
-  const t = useTranslations("Index");
+export async function generateMetadata(props: PageProps<"/[locale]">) {
+  const { locale } = await props.params;
+  const t = await getTranslations({ locale, namespace: "Index" });
 
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
+
+export default async function Home(_props: PageProps<"/[locale]">) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-      <main className="flex flex-col items-center gap-8 px-4 text-center">
-        <h1 className="text-4xl font-bold sm:text-6xl">{t("title")}</h1>
-        <p className="text-lg text-muted-foreground sm:text-xl">{t("description")}</p>
-      </main>
-    </div>
+    <main>
+      <HeroSection />
+    </main>
   );
 }
