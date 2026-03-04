@@ -6,7 +6,7 @@ export const SortingSchema = z.object({
     .optional()
     .default("-createdAt")
     .transform((val, ctx) => {
-      if (!val) return [{ createdAt: "desc" }];
+      if (!val) return [{ createdAt: "desc" as SortOrder }];
 
       const parts = val
         .split(",")
@@ -26,7 +26,7 @@ export const SortingSchema = z.object({
               code: "custom",
               message: `Invalid sort format: '${part}'. Field name is missing.`,
             });
-            return { createdAt: "desc" }; // fallback
+            return { createdAt: "desc" as SortOrder }; // fallback
           }
 
           fieldName = field;
@@ -46,7 +46,7 @@ export const SortingSchema = z.object({
           direction = "asc"; // fallback
         }
 
-        return { [fieldName]: direction } as Record<string, "asc" | "desc">;
+        return { [fieldName]: direction } as Record<string, SortOrder>;
       });
     }),
 });

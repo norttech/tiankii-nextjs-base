@@ -116,23 +116,25 @@ Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module
 |------|------|---------|
 | List | `page.tsx` | Fetch + display all records with search, sort, pagination |
 | View | `[id]/page.tsx` | Display a single record with all its fields |
-| Edit | `[id]/edit/page.tsx` | Pre-filled form to update a record |
 | Create | `create/page.tsx` | Empty form to create a record |
+*(Note: Edit forms should render inside a `Sheet` (drawer) drawn from the List view, rather than requiring a dedicated edit page).*
 
 ### Hard rules (non-negotiable)
 
 - **`"use client"`** on all UI pages — never run Prisma in a component.
 - **Data fetching** — `useQuery` / `useMutation` from `@tanstack/react-query`. All calls go through the API routes created in Step 5.
-- **Navigation** — always import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`, never from `next/link` or `next/navigation`.
+- **Navigation** — always import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`.
 - **Toasts** — `import { toast } from "react-hot-toast"` for success/error feedback.
-- **i18n** — all user-visible strings must use `useTranslations` from `next-intl`. No hardcoded English strings.
-- **Forms** — `react-hook-form` + `@hookform/resolvers/zod` + the Zod schemas from Step 4. Show inline field-level validation errors.
-- **Response shape** — list endpoints return `PaginatedResponse<T>`, access records via `data?.data`. Single-record endpoints return the record directly without a `.data` wrapper.
+- **i18n** — all user-visible strings must use `useTranslations` from `next-intl`.
+- **Forms** — `react-hook-form` + `@hookform/resolvers/zod` + Zod schemas. Show inline field-level validation errors.
+- **Type safety** — heavily type page parameters using Next.js `PageProps<"/route">` and `useQuery<PaginatedResponse<Type>>` where appropriate.
+- **Response shape** — list endpoints return `PaginatedResponse<T>`. Batch operations (like delete) send an array of IDs.
 - **Required UI behaviours**:
-  - List page: search input, sortable columns, pagination controls, "Add New" button, per-row actions (View, Edit, Duplicate, Delete).
+  - **List Actions**: Search input, sortable columns, pagination controls, "Add New" button.
+  - **Batch Actions**: The table MUST have checkboxes for each row, and a "Batch Delete" button visible only when rows are selected, submitting to a `DELETE /api/[module]` endpoint containing an array of IDs in the body.
+  - **Per-row Actions**: A Dropdown menu with: View, Edit (opens in a `Sheet` drawer on the same page), Print (`window.print()`), Duplicate (POSTs to `/api/.../duplicate`), Delete.
+  - Form validation states disable submit buttons. Loading skeletons display while data loads. Empty states show when no data is found.
   - Delete always asks for confirmation before firing.
-  - Forms show loading states while submitting.
-  - Empty states and loading skeletons on all lists.
 
 ### Design freedom
 

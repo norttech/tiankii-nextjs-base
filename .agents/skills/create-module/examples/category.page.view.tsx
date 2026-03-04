@@ -1,7 +1,9 @@
 // @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 "use client";
+import { use } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Category } from "@prisma/client";
 import { Link, useRouter } from "@/lib/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,13 +40,14 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export default function CategoryViewPage({ params }: { params: { id: string } }) {
+export default function CategoryViewPage(props: PageProps<"/categories/[id]">) {
+  const params = use(props.params);
   const t = useTranslations("categories");
   const router = useRouter();
   const queryClient = useQueryClient();
 
   // API returns the category record directly — no { data } wrapper
-  const { data: category, isLoading, isError } = useQuery({
+  const { data: category, isLoading, isError } = useQuery<Category>({
     queryKey: ["category", params.id],
     queryFn: () =>
       fetch(`/api/categories/${params.id}`).then((res) => {

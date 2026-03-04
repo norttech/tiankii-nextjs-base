@@ -42,3 +42,21 @@ export const POST = withGuards({ schema: CreateCategorySchema }, async ({ user, 
 
   return NextResponse.json(category, { status: 201 });
 });
+
+// DELETE /api/categories — Batch Delete
+export const DELETE = withGuards({}, async ({ req }) => {
+  const body = await req.json();
+  const { ids } = body;
+
+  if (!ids || !Array.isArray(ids)) {
+    return NextResponse.json({ error: "Invalid 'ids' provided" }, { status: 400 });
+  }
+
+  const result = await prisma.category.deleteMany({
+    where: {
+      id: { in: ids },
+    },
+  });
+
+  return NextResponse.json({ success: true, count: result.count });
+});
