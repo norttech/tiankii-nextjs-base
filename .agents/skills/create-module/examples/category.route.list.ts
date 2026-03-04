@@ -7,14 +7,21 @@ import { withGuards } from "@/middlewares/api/with-guards";
 
 // GET /api/categories — List with pagination, sorting, and search
 export const GET = withGuards({}, async ({ req }) => {
-  const { page, pageSize, sort, ...filters } = QueryCategorySchema.parse(
+  const { page, pageSize, sort, search, ...filters } = QueryCategorySchema.parse(
     Object.fromEntries(req.nextUrl.searchParams)
   );
   const { skip, take } = getPaginationParams(req);
 
-  const where = {
+  const where: Prisma.CategoryWhereInput = {
     ...filters,
   };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
   const [data, total] = await prisma.$transaction([
     prisma.category.findMany({ where, skip, take, orderBy: sort }),
