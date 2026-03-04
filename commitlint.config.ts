@@ -28,7 +28,7 @@ const config: UserConfig = {
     // Subject cannot be empty
     "subject-empty": [2, "never"],
     // Subject must be in sentence case (e.g. "Fix a bug.")
-    "subject-case": [2, "always", "sentence-case"],
+    "subject-case": [0],
     // Allow subject to end with a period
     "subject-full-stop": [0, "always", "."],
     // Header max length (type + scope + subject)
