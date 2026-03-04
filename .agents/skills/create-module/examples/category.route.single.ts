@@ -11,7 +11,7 @@ export const GET = withGuards({}, async ({ user }, ctx: RouteContext<"/api/categ
   const { id } = await ctx.params;
 
   const category = await prisma.category.findUnique({
-    where: { id, isActive: true, deletedAt: null },
+    where: { id },
   });
 
   if (!category) throw new NotFoundError("Category not found");
@@ -34,17 +34,12 @@ export const PATCH = withGuards({ schema: UpdateCategorySchema }, async ({ user,
   return NextResponse.json(category);
 });
 
-// DELETE /api/categories/[id] — Soft Delete
+// DELETE /api/categories/[id] — Hard Delete
 export const DELETE = withGuards({}, async ({ user }, ctx: RouteContext<"/api/categories/[id]">) => {
   const { id } = await ctx.params;
 
-  const category = await prisma.category.update({
+  const category = await prisma.category.delete({
     where: { id },
-    data: {
-      isActive: false,
-      deletedAt: new Date(),
-      deletedBy: user.id,
-    },
   });
 
   return NextResponse.json(category);

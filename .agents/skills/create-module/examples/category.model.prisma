@@ -9,9 +9,6 @@ model Category {
     updatedAt DateTime  @updatedAt
     createdBy String?
     updatedBy String?
-    deletedAt DateTime?
-    deletedBy String?
-    isActive  Boolean   @default(true)
 
     @@map("categories")
 }

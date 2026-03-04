@@ -7,12 +7,10 @@ export const CategorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
 });
 
 export const CreateCategorySchema = CategorySchema.omit({
   id: true,
-  isActive: true,
 });
 
 export const UpdateCategorySchema = CategorySchema.partial().omit({

@@ -13,9 +13,7 @@ export const GET = withGuards({}, async ({ req }) => {
   const { skip, take } = getPaginationParams(req);
 
   const where = {
-    isActive: true,
     ...filters,
-    deletedAt: null,
   };
 
   const [data, total] = await prisma.$transaction([

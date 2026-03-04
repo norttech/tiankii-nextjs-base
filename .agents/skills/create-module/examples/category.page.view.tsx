@@ -108,7 +108,7 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
     );
   }
 
-  const { name, description, color, isActive, createdAt, updatedAt, createdBy, updatedBy } =
+  const { name, description, color, createdAt, updatedAt, createdBy, updatedBy } =
     category;
 
   // ── Main view ──────────────────────────────────────────────────────────────
@@ -174,9 +174,6 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
                 <CardDescription className="text-base">{description}</CardDescription>
               )}
             </div>
-            <Badge variant={isActive ? "default" : "secondary"} className="shrink-0">
-              {isActive ? t("status.active") : t("status.inactive")}
-            </Badge>
           </div>
         </CardHeader>
 
@@ -199,14 +196,6 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
                 }
               />
             )}
-            <Field
-              label={t("fields.status")}
-              value={
-                <Badge variant={isActive ? "default" : "secondary"}>
-                  {isActive ? t("status.active") : t("status.inactive")}
-                </Badge>
-              }
-            />
           </div>
 
           <Separator />

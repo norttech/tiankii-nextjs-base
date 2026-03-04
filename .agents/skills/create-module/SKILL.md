@@ -53,9 +53,6 @@ createdAt   DateTime  @default(now())
 updatedAt   DateTime  @updatedAt
 createdBy   String?
 updatedBy   String?
-deletedAt   DateTime?
-deletedBy   String?
-isActive    Boolean   @default(true)
 ```
 
 // turbo
@@ -76,7 +73,7 @@ yarn db:migrate
 
 Create three schemas:
 
-- **`Create[Module]Schema`** — all user-facing fields. Omit: `id`, all audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `deletedAt`, `deletedBy`, `isActive`).
+- **`Create[Module]Schema`** — all user-facing fields. Omit: `id`, all audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`).
 - **`Update[Module]Schema`** — same as Create, fully `.partial()`.
 - **`Query[Module]Schema`** — MUST extend `QueryBaseSchema` from `@/lib/schemas/common`. This provides `page`, `pageSize` (0 = all), `search`, and multi-field `sort` (e.g. `+name,-createdAt`). Add any module-specific filter fields on top.
 
@@ -98,9 +95,8 @@ Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module
 4. **Audit fields** — always inject `user.id`:
    - Create → `createdBy: user.id`
    - Update → `updatedBy: user.id`
-   - Delete → `deletedBy: user.id`
-5. **Soft delete only** — never hard-delete. Set `isActive: false`, `deletedAt: new Date()`, `deletedBy: user.id`.
-6. **List filtering** — always include `{ deletedAt: null }`. Use destructuring to separate pagination/sorting from filters: `const { page, pageSize, sort, ...filters } = params;`. Spread `filters` directly into the `where` clause: `const where = { isActive: true, ...filters, deletedAt: null };`. This ensures "one-to-one" mapping with direct equality. Do not use global search or partial string matching (`contains`) unless explicitly requested.
+5. **Hard delete** — use `prisma.[model].delete({ where: { id } })`. No soft-delete fields.
+6. **List filtering** — use destructuring to separate pagination/sorting from filters: `const { page, pageSize, sort, ...filters } = params;`. Spread `filters` directly into the `where` clause: `const where = { ...filters };`. This ensures "one-to-one" mapping with direct equality. Do not use global search or partial string matching (`contains`) unless explicitly requested.
 7. **No `Promise.all` for database queries** — use `prisma.$transaction([])` for concurrent queries or serial await calls up to 2-3 requests, or direct calls.
 8. **Response contract**:
    | Operation | Response |

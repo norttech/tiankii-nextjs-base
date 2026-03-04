@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-export const SearchSchema = z.object({
-  isActive: z.union([z.boolean(), z.string().transform((val) => val === "true")]).optional(),
-});
+export const SearchSchema = z.object({});
 
 export type SearchType = z.infer<typeof SearchSchema>;

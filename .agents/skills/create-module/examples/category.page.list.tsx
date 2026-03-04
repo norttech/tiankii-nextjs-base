@@ -138,7 +138,6 @@ export default function CategoryListPage() {
             <TableRow>
               <TableHead>{t("fields.name")}</TableHead>
               <TableHead>{t("fields.description")}</TableHead>
-              <TableHead>{t("fields.status")}</TableHead>
               <TableHead>{t("fields.created_at")}</TableHead>
               <TableHead className="w-12" />
             </TableRow>
@@ -148,7 +147,7 @@ export default function CategoryListPage() {
               // Loading rows
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((_, j) => (
+                  {Array.from({ length: 4 }).map((_, j) => (
                     <TableCell key={j}>
                       <div className="h-4 w-full animate-pulse rounded bg-muted" />
                     </TableCell>
@@ -157,7 +156,7 @@ export default function CategoryListPage() {
               ))
             ) : categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
                   {search ? t("search.no_results") : t("empty_state")}
                 </TableCell>
               </TableRow>
@@ -174,11 +173,6 @@ export default function CategoryListPage() {
                   </TableCell>
                   <TableCell className="max-w-xs truncate text-muted-foreground">
                     {category.description || "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={category.isActive ? "default" : "secondary"}>
-                      {category.isActive ? t("status.active") : t("status.inactive")}
-                    </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(category.createdAt).toLocaleDateString()}
