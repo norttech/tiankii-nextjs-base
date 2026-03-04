@@ -4,14 +4,16 @@ description: Scaffolds a full module including Prisma model, Zod schemas, API ro
 
 # Create Module Skill
 
-This skill defines the canonical workflow for scaffolding a new feature module. Every module MUST implement full CRUD and follow these patterns exactly.
+This skill defines the canonical workflow for scaffolding a new feature module. Every module MUST implement full CRUD. Backend rules are **strict and non-negotiable**. UI rules define required behaviour and integration points — the visual design and component choices are yours to make excellent.
 
-**Reference implementation:** see `examples/` inside this skill folder for complete, working code:
-- `category.schema.ts` — Zod schemas (Create, Update, Query)
-- `category.route.list.ts` — `GET` list + `POST` create
-- `category.route.single.ts` — `GET` / `PATCH` / `DELETE` by ID
-- `category.page.list.tsx` — List page (client component, react-query)
-- `category.page.view.tsx` — View page (client component, react-query)
+**Reference examples** (in `examples/`):
+- `category.schema.ts` — Zod schemas
+- `category.route.list.ts` — list + create route
+- `category.route.single.ts` — get / update / delete route
+- `category.page.list.tsx` — list page
+- `category.page.view.tsx` — view page
+
+> **⚠️ NOTE:** Example files contain `// @ts-nocheck` to suppress editor errors (they live outside `src/`). **Never copy this line into generated files.** All generated code must be fully typed.
 
 ---
 
@@ -19,20 +21,20 @@ This skill defines the canonical workflow for scaffolding a new feature module. 
 
 Before writing any code:
 
-1. Ask the user for the **module name** (e.g. `ProductCategory`).
-   - PascalCase for types/schemas: `ProductCategory`
-   - kebab-case for file paths and URLs: `product-category`
-   - camelCase for Prisma model: `productCategory`
+1. Ask for the **module name** (e.g. `ProductCategory`).
+   - Types/schemas → PascalCase: `ProductCategory`
+   - File paths & URLs → kebab-case: `product-category`
+   - Prisma model → camelCase: `productCategory`
 2. Ask for the **model fields**: name, type, required/optional, unique constraints.
-3. Ask for any **module-specific query filters** to extend the base schema.
-4. Confirm with the user before generating code.
+3. Ask for any **module-specific query filters** beyond the built-in search/sort/pagination.
+4. **Confirm with the user before generating any code.**
 
 ---
 
 ## Step 2 — Scaffold Directory Structure
 
 // turbo
-Run the scaffold script to create all directories and placeholder files:
+Run the scaffold script:
 
 ```bash
 bash .agents/skills/create-module/scripts/scaffold.sh <module_name>
@@ -44,7 +46,7 @@ bash .agents/skills/create-module/scripts/scaffold.sh <module_name>
 
 Add the model to `prisma/schema.prisma`.
 
-Every model MUST include the following audit fields — no exceptions:
+Every model MUST include these audit fields — no exceptions:
 
 ```prisma
 createdAt   DateTime  @default(now())
@@ -72,70 +74,92 @@ yarn db:migrate
 
 **File:** `src/lib/schemas/[module]/[module].schema.ts`
 
-See `examples/category.schema.ts` for the full reference. Create three schemas:
+Create three schemas:
 
-- **Create** — omit all auto-generated/audit fields (`id`, timestamps, audit strings, `isActive`).
-- **Update** — same as Create but fully `.partial()`. No immutable fields.
-- **Query** — MUST extend `QueryBaseSchema` from `@/lib/schemas/common`, which provides:
-  - `page`, `pageSize` (0 = no limit / fetch all), `search`, and multi-field `sort` (`+name,-createdAt`).
-  - Add module-specific filters as optional fields on top.
+- **`Create[Module]Schema`** — all user-facing fields. Omit: `id`, all audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `deletedAt`, `deletedBy`, `isActive`).
+- **`Update[Module]Schema`** — same as Create, fully `.partial()`.
+- **`Query[Module]Schema`** — MUST extend `QueryBaseSchema` from `@/lib/schemas/common`. This provides `page`, `pageSize` (0 = all), `search`, and multi-field `sort` (e.g. `+name,-createdAt`). Add any module-specific filter fields on top.
 
-Export inferred types for all three schemas.
+Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module]`, `Query[Module]`.
 
 ---
 
 ## Step 5 — API Routes
 
-See `examples/category.route.list.ts` and `examples/category.route.single.ts` for the full reference.
+**Files:**
+- `src/app/api/[module]/route.ts` — `GET` (list), `POST` (create)
+- `src/app/api/[module]/[id]/route.ts` — `GET`, `PATCH`, `DELETE`
 
-### Critical Rules
+### Non-negotiable rules
 
-1. **`withGuards` is mandatory** for every handler — import from `@/middlewares/api/with-guards`. **Never use `try/catch`** — all errors are caught and handled centrally by `withGuards` → `handleApiError`.
-2. **Body validation via `withGuards`** — pass `schema` in options. `ctx.body` will be typed as `z.infer<typeof Schema>` automatically. Do not call `.parse()` manually in the handler.
-3. **Dynamic params typing** — type the second argument as `RouteContext<"/api/[module]/[id]">`. This is **globally available** after `next build` / `next typegen`. **Do not import it.**
-4. **Audit fields** — always inject `user.id` from `ctx.user`:
+1. **`withGuards` wraps every handler** — import from `@/middlewares/api/with-guards`. **No `try/catch` blocks** — errors propagate to `withGuards` → `handleApiError`.
+2. **Body validation via `withGuards`** — pass `schema` in options; `body` is auto-typed. Never call `.parse()` manually.
+3. **Dynamic params typing** — type the second argument as `RouteContext<"/api/[module]/[id]">`. **Globally available — do not import it.**
+4. **Audit fields** — always inject `user.id`:
    - Create → `createdBy: user.id`
    - Update → `updatedBy: user.id`
    - Delete → `deletedBy: user.id`
-5. **Soft delete only** — never hard-delete. Set `isActive: false`, `deletedAt: new Date()`.
-6. **Default list filtering** — always include `{ isActive: true, deletedAt: null }` in list `where` clauses.
-7. **Response format**:
-   - List      → `createPaginatedNextResponse(data, total, { page, pageSize })` from `@/lib/utils/pagination`
-   - Created   → `NextResponse.json(record, { status: 201 })`
-   - Single    → `NextResponse.json(record)` — **no `{ data }` envelope**
-   - Not found → `throw new NotFoundError()` from `@/lib/utils/error-handler`
-
-### Files to create
-
-- `src/app/api/[module]/route.ts` — `GET` (list), `POST` (create)
-- `src/app/api/[module]/[id]/route.ts` — `GET`, `PATCH`, `DELETE`
+5. **Soft delete only** — never hard-delete. Set `isActive: false`, `deletedAt: new Date()`, `deletedBy: user.id`.
+6. **List filtering** — always include `{ isActive: true, deletedAt: null }` in `where` clauses.
+7. **Response contract**:
+   | Operation | Response |
+   |-----------|----------|
+   | List | `createPaginatedNextResponse(data, total, { page, pageSize })` from `@/lib/utils/pagination` |
+   | Create | `NextResponse.json(record, { status: 201 })` |
+   | Get / Update / Delete | `NextResponse.json(record)` — no `{ data }` envelope |
+   | Not found | `throw new NotFoundError("...")` from `@/lib/utils/error-handler` |
 
 ---
 
 ## Step 6 — UI Pages & Components
 
-Create pages under `src/app/[locale]/[module]/`. Use `react-hook-form` + `@hookform/resolvers/zod` with the Zod schemas from Step 4.
+**Pages to create** under `src/app/[locale]/[module]/`:
 
-### Conventions (CRITICAL)
+| Page | Path | Purpose |
+|------|------|---------|
+| List | `page.tsx` | Fetch + display all records with search, sort, pagination |
+| View | `[id]/page.tsx` | Display a single record with all its fields |
+| Edit | `[id]/edit/page.tsx` | Pre-filled form to update a record |
+| Create | `create/page.tsx` | Empty form to create a record |
 
-- **Client Components** — UI pages are `"use client"` components. Use `@tanstack/react-query` (`useQuery`, `useMutation`) for all data fetching and mutations against API routes. **Never import or call `prisma` in any component file.**
-- **Navigation** — import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`. Never from `next/link` or `next/navigation` directly.
-- **Toasts** — use `react-hot-toast`: `import { toast } from "react-hot-toast"`.
-- **i18n** — use `useTranslations` (sync) from `next-intl`.
-- **Response shape** — list endpoints return `PaginatedResponse<T>`, access records via `data?.data`. Single-record endpoints return the record directly — no `.data` unwrap.
-- **Forms** — use `react-hook-form` + `@hookform/resolvers/zod` with the Zod schemas from Step 4.
+### Hard rules (non-negotiable)
 
-### Pages to create
+- **`"use client"`** on all UI pages — never run Prisma in a component.
+- **Data fetching** — `useQuery` / `useMutation` from `@tanstack/react-query`. All calls go through the API routes created in Step 5.
+- **Navigation** — always import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`, never from `next/link` or `next/navigation`.
+- **Toasts** — `import { toast } from "react-hot-toast"` for success/error feedback.
+- **i18n** — all user-visible strings must use `useTranslations` from `next-intl`. No hardcoded English strings.
+- **Forms** — `react-hook-form` + `@hookform/resolvers/zod` + the Zod schemas from Step 4. Show inline field-level validation errors.
+- **Response shape** — list endpoints return `PaginatedResponse<T>`, access records via `data?.data`. Single-record endpoints return the record directly without a `.data` wrapper.
+- **Required UI behaviours**:
+  - List page: search input, sortable columns, pagination controls, "Add New" button, per-row actions (View, Edit, Duplicate, Delete).
+  - Delete always asks for confirmation before firing.
+  - Forms show loading states while submitting.
+  - Empty states and loading skeletons on all lists.
 
-- **List page** (`page.tsx`) — uses `useQuery` to fetch from `GET /api/[module]`. Data table with pagination, sorting, search. Global **"Add New"** button. Per-row **Actions** dropdown: View, Edit, Duplicate, Delete.
-- **View page** (`[id]/page.tsx`) — uses `useQuery` to fetch from `GET /api/[module]/[id]`. Top action buttons: Edit, Duplicate, Print, Delete.
-- **Edit form** (`[id]/edit/page.tsx`) — pre-filled form using `useQuery` + `useMutation`, inline validation errors.
-- **Create form** (`create/page.tsx`) — empty form with `useMutation`, client-side Zod validation.
+### Design freedom
+
+The examples in `examples/` are **starting points, not templates to copy**. You are expected to:
+
+- Improve the layout, spacing, and visual hierarchy for the specific module's data.
+- Add charts, stats cards, or summary panels if they make sense for the data.
+- Use colour, badges, or icons meaningfully (e.g. status indicators, category colours).
+- Compose and organise sub-components however best suits the module.
+- Combine or split pages differently if it produces a better UX (e.g. a slide-over panel instead of a separate view page for simple models).
+
+The only constraints are the hard rules above. Everything else is a design decision — make it excellent.
 
 ---
 
 ## Step 7 — Internationalization
 
-Update `messages/en.json` and `messages/es.json`. Use `resources/i18n-template.json` as the structure reference.
+Update `src/lib/i18n/messages/en.json` and `es.json`. Use `resources/i18n-template.json` as the key structure reference.
 
-Include keys for: page title, breadcrumbs, table column headers, form field labels and placeholders, button labels, and success/error toast messages.
+Required key groups:
+- Page title & breadcrumb labels
+- Table column headers
+- Form field labels, placeholders, and hint text
+- Button labels (Save, Cancel, Delete, Edit, Duplicate, etc.)
+- Success and error toast messages
+- Confirmation dialog text
+- Empty state and loading messages

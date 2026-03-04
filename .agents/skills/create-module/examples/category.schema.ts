@@ -1,5 +1,4 @@
-// @ts-nocheck
-/* eslint-disable */
+// @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 import { z } from "zod";
 import { QueryBaseSchema } from "@/lib/schemas/common";
 

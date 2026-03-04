@@ -10,8 +10,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
  * and across requests in production to avoid exhausting database connections.
  *
  * Usage:
- *   import { db } from "@/lib/db";
- *   const users = await db.user.findMany();
+ *   import { prisma } from "@/lib/prisma";
+ *   const users = await prisma.user.findMany();
  */
 
 const globalForPrisma = globalThis as unknown as {
@@ -25,8 +25,8 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ adapter });
 }
 
-export const db: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
+export const prisma: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
+  globalForPrisma.prisma = prisma;
 }

@@ -15,7 +15,7 @@ export const SortingSchema = z.object({
 
       return parts.map((part) => {
         let fieldName: string;
-        let direction = "asc";
+        let direction: SortOrder = "asc";
 
         if (part.includes(":") || part.includes("|")) {
           const separator = part.includes(":") ? ":" : "|";
@@ -30,7 +30,7 @@ export const SortingSchema = z.object({
           }
 
           fieldName = field;
-          if (dir) direction = dir.toLowerCase();
+          if (dir) direction = dir.toLowerCase() as SortOrder;
         } else if (part.startsWith("-") || part.startsWith("+")) {
           direction = part.startsWith("-") ? "desc" : "asc";
           fieldName = part.replace(/^[+-]/, "").trim();

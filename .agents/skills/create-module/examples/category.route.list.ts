@@ -1,7 +1,6 @@
-// @ts-nocheck
-/* eslint-disable */
+// @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { QueryCategorySchema, CreateCategorySchema } from "@/lib/schemas/category/category.schema";
 import { getPaginationParams, createPaginatedNextResponse } from "@/lib/utils/pagination";
 import { withGuards } from "@/middlewares/api/with-guards";

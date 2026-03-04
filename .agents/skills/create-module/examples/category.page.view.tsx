@@ -1,13 +1,42 @@
-// @ts-nocheck
-/* eslint-disable */
+// @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 "use client";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@/lib/i18n/routing";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Edit, Trash2, Printer, Copy, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Edit,
+  Trash2,
+  Printer,
+  Copy,
+  ArrowLeft,
+  Loader2,
+  CalendarDays,
+  User,
+  Circle,
+} from "lucide-react";
 import { toast } from "react-hot-toast";
+
+// Small helper to render a labelled field row
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <div className="text-sm">{value ?? <span className="text-muted-foreground">—</span>}</div>
+    </div>
+  );
+}
 
 export default function CategoryViewPage({ params }: { params: { id: string } }) {
   const t = useTranslations("categories");
@@ -15,9 +44,13 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
   const queryClient = useQueryClient();
 
   // API returns the category record directly — no { data } wrapper
-  const { data: category, isLoading } = useQuery({
+  const { data: category, isLoading, isError } = useQuery({
     queryKey: ["category", params.id],
-    queryFn: () => fetch(`/api/categories/${params.id}`).then((res) => res.json()),
+    queryFn: () =>
+      fetch(`/api/categories/${params.id}`).then((res) => {
+        if (!res.ok) throw new Error("Not found");
+        return res.json();
+      }),
   });
 
   const softDeleteMutation = useMutation({
@@ -27,85 +60,205 @@ export default function CategoryViewPage({ params }: { params: { id: string } })
       toast.success(t("notifications.deleted"));
       router.push("/categories");
     },
+    onError: () => toast.error(t("notifications.error")),
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: string) =>
+    mutationFn: () =>
       fetch(`/api/categories/duplicate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      }),
-    onSuccess: () => {
+        body: JSON.stringify({ id: params.id }),
+      }).then((res) => res.json()),
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       toast.success(t("notifications.duplicated"));
-      router.push("/categories");
+      router.push(`/categories/${created.id}`);
     },
+    onError: () => toast.error(t("notifications.error")),
   });
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!category) return <div>{t("notifications.not_found")}</div>;
+  function handleDelete() {
+    if (confirm(t("confirmations.delete"))) {
+      softDeleteMutation.mutate();
+    }
+  }
 
-  const { name, description, createdAt, isActive } = category;
+  // ── Loading state ──────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" asChild>
+  // ── Error / not found state ────────────────────────────────────────────────
+  if (isError || !category) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-4 text-muted-foreground">
+        <p>{t("notifications.not_found")}</p>
+        <Button variant="outline" asChild>
           <Link href="/categories">
-            <ArrowLeft className="mr-2 h-4 w-4" /> {t("actions.back")}
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("actions.back")}
           </Link>
         </Button>
-        <div className="flex space-x-2">
+      </div>
+    );
+  }
+
+  const { name, description, color, isActive, createdAt, updatedAt, createdBy, updatedBy } =
+    category;
+
+  // ── Main view ──────────────────────────────────────────────────────────────
+  return (
+    <div className="mx-auto max-w-4xl space-y-6">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Button variant="ghost" asChild>
+          <Link href="/categories">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("actions.back")}
+          </Link>
+        </Button>
+
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" asChild>
             <Link href={`/categories/${params.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" /> {t("actions.edit")}
+              <Edit className="mr-2 h-4 w-4" />
+              {t("actions.edit")}
             </Link>
           </Button>
-          <Button variant="outline" onClick={() => duplicateMutation.mutate(params.id)}>
-            <Copy className="mr-2 h-4 w-4" /> {t("actions.duplicate")}
+
+          <Button
+            variant="outline"
+            onClick={() => duplicateMutation.mutate()}
+            disabled={duplicateMutation.isPending}
+          >
+            {duplicateMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Copy className="mr-2 h-4 w-4" />
+            )}
+            {t("actions.duplicate")}
           </Button>
+
           <Button variant="outline" onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" /> {t("actions.print")}
+            <Printer className="mr-2 h-4 w-4" />
+            {t("actions.print")}
           </Button>
+
           <Button
             variant="destructive"
-            onClick={() => {
-              if (confirm(t("confirmations.delete"))) {
-                softDeleteMutation.mutate();
-              }
-            }}
+            onClick={handleDelete}
+            disabled={softDeleteMutation.isPending}
           >
-            <Trash2 className="mr-2 h-4 w-4" /> {t("actions.delete")}
+            {softDeleteMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            {t("actions.delete")}
           </Button>
         </div>
       </div>
 
-      {/* Record detail card */}
+      {/* Main detail card */}
       <Card>
         <CardHeader>
-          <CardTitle>{name}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <span className="text-sm font-semibold block uppercase tracking-wider text-muted-foreground">
-              {t("fields.description")}
-            </span>
-            <p className="text-lg">{description || "-"}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="text-sm font-semibold block uppercase tracking-wider text-muted-foreground">
-                {t("fields.created_at")}
-              </span>
-              <p>{new Date(createdAt).toLocaleDateString()}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl">{name}</CardTitle>
+              {description && (
+                <CardDescription className="text-base">{description}</CardDescription>
+              )}
             </div>
-            <div>
-              <span className="text-sm font-semibold block uppercase tracking-wider text-muted-foreground">
-                {t("fields.status")}
-              </span>
-              <p>{isActive ? t("status.active") : t("status.inactive")}</p>
+            <Badge variant={isActive ? "default" : "secondary"} className="shrink-0">
+              {isActive ? t("status.active") : t("status.inactive")}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <Separator />
+
+        <CardContent className="pt-6 space-y-6">
+          {/* Core fields */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {color && (
+              <Field
+                label={t("fields.color")}
+                value={
+                  <span className="flex items-center gap-2">
+                    <Circle
+                      className="h-4 w-4"
+                      style={{ fill: color, stroke: color }}
+                    />
+                    {color}
+                  </span>
+                }
+              />
+            )}
+            <Field
+              label={t("fields.status")}
+              value={
+                <Badge variant={isActive ? "default" : "secondary"}>
+                  {isActive ? t("status.active") : t("status.inactive")}
+                </Badge>
+              }
+            />
+          </div>
+
+          <Separator />
+
+          {/* Audit metadata */}
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("fields.audit_info")}
+            </h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field
+                label={t("fields.created_at")}
+                value={
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {new Date(createdAt).toLocaleString()}
+                  </span>
+                }
+              />
+              {updatedAt && (
+                <Field
+                  label={t("fields.updated_at")}
+                  value={
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {new Date(updatedAt).toLocaleString()}
+                    </span>
+                  }
+                />
+              )}
+              {createdBy && (
+                <Field
+                  label={t("fields.created_by")}
+                  value={
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <User className="h-3.5 w-3.5" />
+                      {createdBy}
+                    </span>
+                  }
+                />
+              )}
+              {updatedBy && (
+                <Field
+                  label={t("fields.updated_by")}
+                  value={
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <User className="h-3.5 w-3.5" />
+                      {updatedBy}
+                    </span>
+                  }
+                />
+              )}
             </div>
           </div>
         </CardContent>
