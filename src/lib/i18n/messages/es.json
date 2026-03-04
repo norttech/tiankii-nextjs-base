@@ -2,5 +2,13 @@
   "Index": {
     "title": "Bienvenido a Tiankii Base",
     "description": "Repositorio listo para usar con arquitectura configurada."
+  },
+  "Login": {
+    "title": "Iniciar sesión",
+    "subtitle": "Ingresa tus credenciales para continuar",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "error": "Correo o contraseña incorrectos"
   }
 }

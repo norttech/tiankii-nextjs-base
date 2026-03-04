@@ -8,11 +8,7 @@
 /**
  * Public pages accessible by anonymous users.
  */
-export const PUBLIC_PAGES: string[] = [
-  "/",
-  // "/login",
-  // "/register",
-];
+export const PUBLIC_PAGES: string[] = ["/login"];
 
 /**
  * Public API routes that bypass authentication.
