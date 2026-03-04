@@ -100,8 +100,9 @@ Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module
    - Update → `updatedBy: user.id`
    - Delete → `deletedBy: user.id`
 5. **Soft delete only** — never hard-delete. Set `isActive: false`, `deletedAt: new Date()`, `deletedBy: user.id`.
-6. **List filtering** — always include `{ isActive: true, deletedAt: null }` in `where` clauses.
-7. **Response contract**:
+6. **List filtering** — always include `{ deletedAt: null }`. Use destructuring to separate pagination/sorting from filters: `const { page, pageSize, sort, ...filters } = params;`. Spread `filters` directly into the `where` clause: `const where = { isActive: true, ...filters, deletedAt: null };`. This ensures "one-to-one" mapping with direct equality. Do not use global search or partial string matching (`contains`) unless explicitly requested.
+7. **No `Promise.all` for database queries** — use `prisma.$transaction([])` for concurrent queries or serial await calls up to 2-3 requests, or direct calls.
+8. **Response contract**:
    | Operation | Response |
    |-----------|----------|
    | List | `createPaginatedNextResponse(data, total, { page, pageSize })` from `@/lib/utils/pagination` |

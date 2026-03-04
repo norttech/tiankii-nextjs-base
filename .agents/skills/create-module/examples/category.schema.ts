@@ -21,7 +21,8 @@ export const UpdateCategorySchema = CategorySchema.partial().omit({
 
 
 export const QueryCategorySchema = QueryBaseSchema.extend({
-  // Add module-specific query filters here if needed
+  name: z.string().optional(),
+  color: z.string().optional(),
 });
 
 export type Category = z.infer<typeof CategorySchema>;
