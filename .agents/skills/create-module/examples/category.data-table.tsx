@@ -186,9 +186,13 @@ export function CategoryDataTable() {
   const [, startTransition] = useTransition();
 
   // ── Mutations ───────────────────────────────────────────────────────────
-  const softDeleteMutation = useMutation({
+  const archiveMutation = useMutation({
     mutationFn: (id: string) =>
-      fetch(`/api/categories/${id}`, { method: "DELETE" }).then((res) => {
+      fetch(`/api/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isArchived: true }),
+      }).then((res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();
       }),
@@ -214,7 +218,7 @@ export function CategoryDataTable() {
       fetch(`/api/categories/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isArchived: false, archivedAt: null }),
+        body: JSON.stringify({ isArchived: false }),
       }).then((res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();
@@ -236,7 +240,7 @@ export function CategoryDataTable() {
 
   const hardDeleteMutation = useMutation({
     mutationFn: (id: string) =>
-      fetch(`/api/categories/${id}?hard=true`, { method: "DELETE" }).then((res) => {
+      fetch(`/api/categories/${id}`, { method: "DELETE" }).then((res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();
       }),
@@ -285,19 +289,19 @@ export function CategoryDataTable() {
   });
 
   const batchArchiveMutation = useMutation({
-    mutationFn: (ids: string[]) =>
-      fetch(`/api/categories/batch-archive`, {
-        method: "POST",
+    mutationFn: ({ ids, isArchived }: { ids: string[]; isArchived: boolean }) =>
+      fetch(`/api/categories`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
+        body: JSON.stringify({ ids, isArchived }),
       }).then((res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();
       }),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setRowSelection({});
-      toast.success(t("notifications.archived_batch"));
+      toast.success(variables.isArchived ? t("notifications.archived_batch") : t("notifications.restored_batch"));
     },
     onError: () => toast.error(t("notifications.error")),
   });
@@ -315,8 +319,8 @@ export function CategoryDataTable() {
     setDrawerOpen(true);
   }
 
-  function handleSoftDelete(category: Category) {
-    softDeleteMutation.mutate(category.id);
+  function handleArchive(category: Category) {
+    archiveMutation.mutate(category.id);
   }
 
   function handleHardDelete(category: Category) {
@@ -337,8 +341,8 @@ export function CategoryDataTable() {
     () =>
       getCategoryColumns(t, {
         onEdit: handleEdit,
-        onSoftDelete: handleSoftDelete,
-        onHardDelete: handleHardDelete,
+        onArchive: handleArchive,
+        onDelete: handleHardDelete,
         onDuplicate: (c) => duplicateMutation.mutate(c.id),
         onRestore: handleRestore,
         onPrint: handlePrint,
@@ -443,7 +447,7 @@ export function CategoryDataTable() {
       {selectedIds.length > 0 && (
         <CategoryBulkToolbar
           selectedCount={selectedIds.length}
-          onArchive={() => batchArchiveMutation.mutate(selectedIds)}
+          onArchive={() => batchArchiveMutation.mutate({ ids: selectedIds, isArchived: true })}
           onDelete={() => batchDeleteMutation.mutate(selectedIds)}
           onDeselectAll={() => setRowSelection({})}
           isArchiving={batchArchiveMutation.isPending}
@@ -465,8 +469,8 @@ export function CategoryDataTable() {
             }))
           }
           onEdit={handleEdit}
-          onSoftDelete={handleSoftDelete}
-          onHardDelete={handleHardDelete}
+          onArchive={handleArchive}
+          onDelete={handleHardDelete}
           onRestore={handleRestore}
           t={t}
         />

@@ -1,7 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -15,13 +15,15 @@ const eslintConfig = defineConfig([
     "dist/**",
     "next-env.d.ts",
     "node_modules/**",
+    // Prisma generated files
+    "prisma/generated/**",
     // Shadcn auto-generated files — do not lint these
     "src/components/ui/**",
     // Agents
     ".agents/**",
   ]),
-  // Prettier integration (must be last to override formatting rules)
-  eslintPluginPrettierRecommended,
+  // Prettier conflict resolution (must be last to disable formatting rules)
+  eslintConfigPrettier,
   {
     rules: {
       // ─── Best Practices ───────────────────────────────────────────────

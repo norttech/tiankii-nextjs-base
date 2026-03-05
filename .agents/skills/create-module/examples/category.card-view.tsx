@@ -20,6 +20,7 @@ import {
 import {
   MoreVertical,
   Edit,
+  Archive,
   Trash2,
   ArchiveRestore,
   AlertTriangle,
@@ -33,9 +34,9 @@ interface CategoryCardViewProps {
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onEdit: (category: Category) => void;
-  onSoftDelete: (category: Category) => void;
-  onHardDelete: (category: Category) => void;
+  onArchive: (category: Category) => void;
   onRestore: (category: Category) => void;
+  onDelete: (category: Category) => void;
   t: (key: string, values?: Record<string, unknown>) => string;
 }
 
@@ -48,9 +49,9 @@ export function CategoryCardView({
   selectedIds,
   onToggleSelect,
   onEdit,
-  onSoftDelete,
-  onHardDelete,
+  onArchive,
   onRestore,
+  onDelete,
   t,
 }: CategoryCardViewProps) {
   // ── Loading Skeletons ───────────────────────────────────────────────────
@@ -131,18 +132,18 @@ export function CategoryCardView({
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem
-                      className="text-amber-600"
-                      onClick={() => onSoftDelete(category)}
+                      className="text-amber-600 focus:text-amber-600"
+                      onClick={() => onArchive(category)}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
+                      <Archive className="mr-2 h-4 w-4" />
                       {t("actions.archive")}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onHardDelete(category)}
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => onDelete(category)}
                   >
-                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     {t("actions.delete_permanent")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>

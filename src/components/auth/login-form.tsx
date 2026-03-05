@@ -80,7 +80,7 @@ export function LoginForm() {
               )}
             </div>
 
-            {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
+            {serverError && <p className="text-center text-sm text-destructive">{serverError}</p>}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "..." : t("submit")}

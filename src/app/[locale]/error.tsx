@@ -31,7 +31,7 @@ export default function Error({
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full pt-4">
+        <div className="flex w-full flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
           <Button onClick={() => reset()} size="lg" className="w-full sm:w-auto">
             Try Again
           </Button>
@@ -41,7 +41,7 @@ export default function Error({
         </div>
 
         {error.digest && (
-          <p className="text-xs text-muted-foreground opacity-50 mt-8">Error ID: {error.digest}</p>
+          <p className="mt-8 text-xs text-muted-foreground opacity-50">Error ID: {error.digest}</p>
         )}
       </div>
     </div>
