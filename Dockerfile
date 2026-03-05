@@ -27,6 +27,7 @@ RUN yarn prisma generate
 # Only NEXT_PUBLIC_* variables are needed at build time.
 # Server-side secrets (AUTH_SECRET, DB_URL, etc.) are injected at runtime
 # via Cloud Run environment variables or Secret Manager.
+ENV NEXT_IS_BUILD=true
 RUN yarn build
 
 # ─── Runner ───────────────────────────────────────────────────────────────────
