@@ -1,5 +1,6 @@
 // @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 "use client";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Category } from "@prisma/client";
@@ -24,8 +25,12 @@ import {
   CalendarDays,
   User,
   Circle,
+  ArchiveRestore,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { CategoryDrawer } from "./CategoryDrawer";
+import { CategoryDeleteDialog } from "./CategoryDeleteDialog";
 
 // Small helper to render a labelled field row
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -44,7 +49,11 @@ export function CategoryView({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // API returns the category record directly — no { data } wrapper
+  // ── Local State ─────────────────────────────────────────────────────────
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // ── Data Query (with exponential backoff retry) ─────────────────────────
   const { data: category, isLoading, isError } = useQuery<Category>({
     queryKey: ["category", id],
     queryFn: () =>
@@ -52,13 +61,42 @@ export function CategoryView({ id }: { id: string }) {
         if (!res.ok) throw new Error("Not found");
         return res.json();
       }),
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
+  // ── Mutations ───────────────────────────────────────────────────────────
   const softDeleteMutation = useMutation({
     mutationFn: () => fetch(`/api/categories/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success(t("notifications.deleted"));
+      toast.success(t("notifications.archived"));
+      router.push("/categories");
+    },
+    onError: () => toast.error(t("notifications.error")),
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: () =>
+      fetch(`/api/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isArchived: false, archivedAt: null }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["category", id] });
+      toast.success(t("notifications.restored"));
+    },
+    onError: () => toast.error(t("notifications.error")),
+  });
+
+  const hardDeleteMutation = useMutation({
+    mutationFn: () =>
+      fetch(`/api/categories/${id}?hard=true`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success(t("notifications.deleted_permanent"));
+      setDeleteDialogOpen(false);
       router.push("/categories");
     },
     onError: () => toast.error(t("notifications.error")),
@@ -69,7 +107,7 @@ export function CategoryView({ id }: { id: string }) {
       fetch(`/api/categories/duplicate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id }),
+        body: JSON.stringify({ id }),
       }).then((res) => res.json()),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -79,13 +117,7 @@ export function CategoryView({ id }: { id: string }) {
     onError: () => toast.error(t("notifications.error")),
   });
 
-  function handleDelete() {
-    if (confirm(t("confirmations.delete"))) {
-      softDeleteMutation.mutate();
-    }
-  }
-
-  // ── Loading state ──────────────────────────────────────────────────────────
+  // ── Loading state ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -94,7 +126,7 @@ export function CategoryView({ id }: { id: string }) {
     );
   }
 
-  // ── Error / not found state ────────────────────────────────────────────────
+  // ── Error / not found state ─────────────────────────────────────────────
   if (isError || !category) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-4 text-muted-foreground">
@@ -109,10 +141,10 @@ export function CategoryView({ id }: { id: string }) {
     );
   }
 
-  const { name, description, color, createdAt, updatedAt, createdBy, updatedBy } =
+  const { name, description, color, isArchived, archivedAt, createdAt, updatedAt, createdBy, updatedBy } =
     category;
 
-  // ── Main view ──────────────────────────────────────────────────────────────
+  // ── Main view ───────────────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Toolbar */}
@@ -125,11 +157,10 @@ export function CategoryView({ id }: { id: string }) {
         </Button>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" asChild>
-            <Link href={`/categories/${id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
-              {t("actions.edit")}
-            </Link>
+          {/* Edit — opens drawer */}
+          <Button variant="outline" onClick={() => setDrawerOpen(true)}>
+            <Edit className="mr-2 h-4 w-4" />
+            {t("actions.edit")}
           </Button>
 
           <Button
@@ -150,27 +181,76 @@ export function CategoryView({ id }: { id: string }) {
             {t("actions.print")}
           </Button>
 
+          {/* Archive / Restore */}
+          {isArchived ? (
+            <Button
+              variant="outline"
+              onClick={() => restoreMutation.mutate()}
+              disabled={restoreMutation.isPending}
+            >
+              {restoreMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArchiveRestore className="mr-2 h-4 w-4" />
+              )}
+              {t("actions.restore")}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (confirm(t("confirmations.archive"))) {
+                  softDeleteMutation.mutate();
+                }
+              }}
+              disabled={softDeleteMutation.isPending}
+            >
+              {softDeleteMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              {t("actions.archive")}
+            </Button>
+          )}
+
+          {/* Hard Delete */}
           <Button
             variant="destructive"
-            onClick={handleDelete}
-            disabled={softDeleteMutation.isPending}
+            onClick={() => setDeleteDialogOpen(true)}
           >
-            {softDeleteMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="mr-2 h-4 w-4" />
-            )}
-            {t("actions.delete")}
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            {t("actions.delete_permanent")}
           </Button>
         </div>
       </div>
+
+      {/* Archived banner */}
+      {isArchived && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3">
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            {t("status.archived")} — {archivedAt && new Date(archivedAt).toLocaleString()}
+          </p>
+        </div>
+      )}
 
       {/* Main detail card */}
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <CardTitle className="text-2xl">{name}</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-2xl">{name}</CardTitle>
+                {isArchived ? (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    {t("status.archived")}
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    {t("status.active")}
+                  </Badge>
+                )}
+              </div>
               {description && (
                 <CardDescription className="text-base">{description}</CardDescription>
               )}
@@ -253,6 +333,27 @@ export function CategoryView({ id }: { id: string }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Edit Drawer ────────────────────────────────────────────────── */}
+      <CategoryDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        mode="edit"
+        category={category}
+        onSuccess={() => {
+          setDrawerOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["category", id] });
+        }}
+      />
+
+      {/* ── Hard Delete Dialog ─────────────────────────────────────────── */}
+      <CategoryDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        category={category}
+        onConfirm={() => hardDeleteMutation.mutate()}
+        isPending={hardDeleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -2,23 +2,40 @@
   "[module]": {
     "title": "[Title Plural]",
     "subtitle": "Total: {count} [Title Plural]",
-    "empty_state": "No [Title Plural] found. Click 'Add New' to create one.",
-    "edit_description": "Update the details for this [Item].",
+    "empty_state": {
+      "default": "No [Title Plural] yet. Click 'Add New' to create one.",
+      "archived": "No archived [Title Plural].",
+      "search": "No [Title Plural] match your current filters."
+    },
     "actions": {
       "label": "Actions",
       "open_menu": "Open menu",
       "add_new": "Add New [Item]",
+      "create": "Create [Item]",
+      "save": "Save Changes",
+      "cancel": "Cancel",
       "view": "View Details",
       "edit": "Edit [Item]",
       "delete": "Delete [Item]",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete_permanent": "Delete Permanently",
       "delete_batch": "Delete Selected",
       "duplicate": "Duplicate",
       "print": "Print",
-      "back": "Back to List"
+      "back": "Back to List",
+      "select_all": "Select all rows",
+      "select_row": "Select this row",
+      "columns": "Columns"
     },
     "search": {
       "placeholder": "Search [Title Plural]...",
-      "no_results": "No [Title Plural] match your search."
+      "no_results": "No [Title Plural] match your search.",
+      "clear_filters": "Clear filters"
+    },
+    "filters": {
+      "show_archived": "Show Archived",
+      "showing_archived": "Showing Archived"
     },
     "pagination": {
       "showing": "Showing {from} to {to} of {total} results",
@@ -28,6 +45,7 @@
     "fields": {
       "name": "Name",
       "description": "Description",
+      "color": "Color",
       "status": "Status",
       "audit_info": "Audit Information",
       "created_at": "Created At",
@@ -35,18 +53,54 @@
       "created_by": "Created By",
       "updated_by": "Updated By"
     },
+    "placeholders": {
+      "name": "Enter [Item] name",
+      "description": "Enter a brief description",
+      "description_hint": "Optional. A short description of this [Item]."
+    },
     "status": {
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "archived": "Archived"
+    },
+    "form": {
+      "create_description": "Fill in the details below to create a new [Item].",
+      "edit_description": "Update the details for this [Item].",
+      "step_basic": "Basic Information",
+      "step_appearance": "Appearance",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "bulk": {
+      "toolbar_label": "Bulk actions toolbar",
+      "selected_count": "{count} item(s) selected",
+      "deselect_all": "Deselect All",
+      "archive": "Archive Selected",
+      "delete_permanent": "Delete Permanently",
+      "more_actions": "More actions"
+    },
+    "delete_dialog": {
+      "title": "Delete [Item] Permanently",
+      "description": "You are about to permanently delete \"{name}\". This action cannot be undone.",
+      "warning": "This will permanently remove this record and all associated data. This action is irreversible.",
+      "challenge": "Type the record ID ({id}) to confirm:",
+      "hint": "Copy and paste the full ID shown above to enable the delete button.",
+      "confirm_button": "Delete Forever"
     },
     "confirmations": {
+      "archive": "Are you sure you want to archive this [Item]?",
+      "archive_batch": "Are you sure you want to archive {count} [Title Plural]?",
       "delete": "Are you sure you want to delete this [Item]?",
-      "delete_batch": "Are you sure you want to delete the selected [Title Plural]?"
+      "delete_batch": "Are you sure you want to permanently delete {count} [Title Plural]?"
     },
     "notifications": {
       "created": "[Item] created successfully!",
       "updated": "[Item] updated successfully!",
+      "archived": "[Item] archived successfully!",
+      "archived_batch": "Selected [Title Plural] archived successfully!",
+      "restored": "[Item] restored successfully!",
       "deleted": "[Item] deleted successfully!",
+      "deleted_permanent": "[Item] permanently deleted!",
       "deleted_batch": "Selected [Title Plural] deleted successfully!",
       "duplicated": "[Item] duplicated successfully!",
       "not_found": "[Item] not found.",

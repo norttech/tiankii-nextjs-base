@@ -1,14 +1,19 @@
 model Category {
-    id          String  @id @default(cuid())
+    id          String   @id @default(cuid())
     name        String
     description String?
-    color       String? @default("#000000")
+    color       String?  @default("#000000")
+
+    // Status Fields — Archive / Deactivate
+    isArchived  Boolean  @default(false)
+    archivedAt  DateTime?
+    archivedBy  String?
 
     // MANDATORY Audit Fields
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    createdBy String?
-    updatedBy String?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    createdBy   String?
+    updatedBy   String?
 
     @@map("categories")
 }

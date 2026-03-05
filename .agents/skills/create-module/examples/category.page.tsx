@@ -1,5 +1,5 @@
 // @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
-import { CategoryList } from "@/components/modules/categories/CategoryList";
+import { CategoryDataTable } from "@/components/modules/categories/CategoryDataTable";
 import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata(props: PageProps<"/[locale]/categories">) {
@@ -15,7 +15,7 @@ export async function generateMetadata(props: PageProps<"/[locale]/categories">)
 export default function CategoryListPage(_props: PageProps<"/[locale]/categories">) {
   return (
     <div className="container mx-auto py-6">
-      <CategoryList />
+      <CategoryDataTable />
     </div>
   );
 }
