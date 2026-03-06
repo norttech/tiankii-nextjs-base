@@ -91,6 +91,15 @@ yarn db:generate
 yarn db:migrate
 ```
 
+### Prisma Seed
+
+For every module implemented, you MUST add seed data to `prisma/seed.ts`. Append dummy data creation logic for the new model to `prisma/seed.ts` (e.g., using `prisma.[model].createMany([...])`).
+
+// turbo
+```bash
+npx prisma db seed
+```
+
 ---
 
 ## Step 4 — Zod Schemas
