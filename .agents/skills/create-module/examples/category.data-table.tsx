@@ -255,10 +255,8 @@ export function CategoryDataTable() {
 
   const duplicateMutation = useMutation({
     mutationFn: (id: string) =>
-      fetch(`/api/categories/duplicate`, {
+      fetch(`/api/categories/${id}/duplicate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
       }).then((res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();

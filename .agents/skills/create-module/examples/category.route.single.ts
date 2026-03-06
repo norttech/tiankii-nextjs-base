@@ -52,3 +52,29 @@ export const DELETE = withGuards({}, async ({ user }, ctx: RouteContext<"/api/ca
 
   return NextResponse.json(category);
 });
+
+// POST /api/categories/[id]/duplicate — Duplicate a record
+export const POST = withGuards({}, async ({ user }, ctx: RouteContext<"/api/categories/[id]/duplicate">) => {
+  const { id } = await ctx.params;
+
+  const existingCategory = await prisma.category.findUnique({
+    where: { id },
+  });
+
+  if (!existingCategory) {
+    throw new NotFoundError("Category not found");
+  }
+
+  // Remove system-managed fields before duplication
+  const { id: _, createdAt, updatedAt, createdBy, updatedBy, ...categoryData } = existingCategory;
+
+  const duplicatedCategory = await prisma.category.create({
+    data: {
+      ...categoryData,
+      name: `${categoryData.name} (Copy)`,
+      createdBy: user.id,
+    },
+  });
+
+  return NextResponse.json(duplicatedCategory, { status: 201 });
+});

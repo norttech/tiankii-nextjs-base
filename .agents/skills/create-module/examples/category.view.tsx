@@ -104,10 +104,8 @@ export function CategoryView({ id }: { id: string }) {
 
   const duplicateMutation = useMutation({
     mutationFn: () =>
-      fetch(`/api/categories/duplicate`, {
+      fetch(`/api/categories/${id}/duplicate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
       }).then((res) => res.json()),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
