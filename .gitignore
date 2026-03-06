@@ -43,3 +43,9 @@ next-env.d.ts
 
 # prisma generated client (re-generated during build via prisma generate)
 /prisma/generated
+
+# Base project reference (not for production)
+.base-project
+
+# Temp files
+tmp_*.txt
