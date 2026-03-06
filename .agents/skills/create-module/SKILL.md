@@ -1,5 +1,5 @@
 ---
-description: Scaffolds a full enterprise-grade CRUD module including Prisma model, Zod schemas, API routes, and UI pages with TanStack Table, Side Drawer, Bulk Actions, Optimistic UI, and Mobile Card View
+description: Scaffolds a full enterprise-grade CRUD module including Prisma model, Zod schemas, API routes, and UI pages with TanStack Table, Side Drawer, Bulk Actions, Pagination, and Mobile Card View
 ---
 
 # Create Module Skill — Enterprise-Grade CRUD
@@ -13,15 +13,19 @@ You are acting as a **Senior Frontend Architect & UX Expert** specialising in co
 | File | Purpose |
 |------|---------|
 | `category.schema.ts` | Zod schemas (Create, Update, Query) |
-| `category.route.list.ts` | List + Create + Batch Delete API route |
+| `category.route.list.ts` | List + Create + Batch Delete + Batch Archive API route |
 | `category.route.single.ts` | Get / Update / Delete API route |
 | `category.page.tsx` | Server Component — list page |
 | `category.view.page.tsx` | Server Component — view page |
-| `category.data-table.tsx` | TanStack Table + column visibility + sticky headers + zebra stripes + mobile card view |
+| `category.data-table.tsx` | TanStack Table + column visibility + page header + pagination |
 | `category.columns.tsx` | Column definitions with select, sortable headers, row actions |
 | `category.drawer.tsx` | Side Drawer (Sheet) for Create/Update with multi-step mobile support |
 | `category.bulk-toolbar.tsx` | Sticky Bulk Action Toolbar with aria-live + overflow menu |
 | `category.delete-dialog.tsx` | Permanent delete confirmation with ID transcription friction |
+| `category.card-view.tsx` | Mobile card layout |
+| `category.url-state.ts` | URL state management using nuqs |
+| `category.query.ts` | TanStack Query hooks for data fetching |
+| `category.mutations.ts` | TanStack Mutation hooks for CRUD operations |
 
 > **⚠️ NOTE:** Example files contain `// @ts-nocheck` to suppress editor errors (they live outside `src/`). **Never copy this line into generated files.** All generated code must be fully typed.
 
@@ -141,10 +145,63 @@ Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module
    | Create | `NextResponse.json(record, { status: 201 })` |
    | Get / Update / Delete | `NextResponse.json(record)` — no `{ data }` envelope |
    | Not found | `throw new NotFoundError("...")` from `@/lib/utils/error-handler` |
+10. **Prisma types** — import `{ type Prisma } from "@prisma/client"` and use the camelCase where-input type (e.g., `Prisma.sourcesWhereInput`). The generated Prisma v7 types use camelCase model names matching the `prisma.schema` model name. **Never use `any`** for the `where` clause.
 
 ---
 
-## Step 6 — UI Pages & Components
+## Step 6 — Custom Hooks (3 files)
+
+Each module MUST create 3 hook files under `src/lib/hooks/[module]/`:
+
+### 1. `use[Module]UrlState.ts` — URL State Management
+
+Uses **`nuqs`** (not `useSearchParams` + `useRouter`) for URL state persistence. Every table state parameter is synced bidirectionally with URL query params.
+
+```typescript
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+
+export function use[Module]UrlState() {
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [pageSize, setPageSize] = useQueryState("pageSize", parseAsInteger.withDefault(10));
+  const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
+  const [sort, setSort] = useQueryState("sort", parseAsString.withDefault("-createdAt"));
+  const [isArchived, setIsArchived] = useQueryState("isArchived", parseAsString.withDefault("false"));
+  // ... module-specific filters
+
+  return { page, setPage, pageSize, setPageSize, search, setSearch, sort, setSort, isArchived, setIsArchived, /* ... */ };
+}
+```
+
+### 2. `use[Module]Query.ts` — Data Fetching
+
+Single query hook that accepts all URL state params and passes them to the API:
+
+```typescript
+import { useQuery } from "@tanstack/react-query";
+
+export function use[Module]Query(params: { page?: number; pageSize?: number; search?: string; sort?: string; isArchived?: boolean }) {
+  return useQuery({
+    queryKey: ["[module]", params],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) searchParams.append(key, String(value));
+      });
+      const res = await fetch(`/api/[module]?${searchParams.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+}
+```
+
+### 3. `use[Module]Mutations.ts` — CRUD Mutations
+
+All 6 mutations in one hook: `createMutation`, `updateMutation`, `deleteMutation`, `archiveMutation`, `batchArchiveMutation`, `batchDeleteMutation`. Each invalidates the query key on success.
+
+---
+
+## Step 7 — UI Pages & Components
 
 ### Architecture Overview
 
@@ -164,7 +221,7 @@ src/
 └── lib/hooks/[module]/
     ├── use[Module]Query.ts               ← Query hook with URL sync
     ├── use[Module]Mutations.ts           ← All CRUD mutations
-    └── use[Module]UrlState.ts            ← URL state management
+    └── use[Module]UrlState.ts            ← URL state management (nuqs)
 ```
 
 ### Hard rules (non-negotiable)
@@ -173,23 +230,48 @@ src/
 - **Client Components for UI** — All interactivity, `useQuery`, `useMutation`, and hooks MUST live in client components under `src/components/modules/[module]/`.
 - **Data fetching** — `useQuery` / `useMutation` from `@tanstack/react-query` inside client components. All calls go through the API routes created in Step 5.
 - **Navigation** — always import `Link`, `useRouter`, `redirect` from `@/lib/i18n/routing`.
-- **Toasts** — `import { toast } from "react-hot-toast"` for success feedback ONLY. **Zero toasts for validation errors** — inline field-level errors only.
-- **i18n** — use `getTranslations` (server) or `useTranslations` (client) from `next-intl`.
+- **Toasts** — `import toast from "react-hot-toast"` (default import, not named) for success feedback ONLY. **Zero toasts for validation errors** — inline field-level errors only.
+- **i18n** — use `getTranslations` (server) or `useTranslations` (client) from `next-intl`. Use `useTranslations()` (no namespace arg) and reference keys as `t("ModuleName.key")` with PascalCase namespaces.
 - **Forms** — `react-hook-form` + `@hookform/resolvers/zod` + Zod schemas. Show inline field-level validation errors anchored below the field with ARIA descriptions and iconography.
 - **Type safety** — Every page component and `generateMetadata` function MUST use the global `PageProps<"/route-literal">` helper.
 - **Async Props** — In Next.js 16+, `params` and `searchParams` are Promises. You MUST `await` them before access (e.g., `const { id } = await props.params`).
 - **Response shape** — list endpoints return `PaginatedResponse<T>`. Batch operations (like delete) send an array of IDs.
+- **No duplicate imports** — never import from the same package in two separate `import` statements. Merge them into one (e.g., `import { useLocale, useTranslations } from "next-intl"`).
+- **ESLint suppress** — add `// eslint-disable-next-line react-hooks/incompatible-library` above `useReactTable()` calls. This is a known TanStack Table warning, not a bug.
 
 ### 1. Enterprise Data Table (Read Operation)
 
-The table MUST implement:
+The DataTable is the central orchestrator. It MUST implement this structure:
 
-- **TanStack Table integration** — Use `@tanstack/react-table` with `useReactTable`, `getCoreRowModel`, `getSortedRowModel`, `getFilteredRowModel`, `getPaginationRowModel`.
-- **Sticky headers** — Apply `sticky top-0 z-10 bg-background` to `<thead>` so column headers remain visible during vertical scroll.
-- **Zebra stripes** — Apply moderate alternating row backgrounds (`even:bg-muted/30`) for horizontal scan readability.
-- **Column visibility** — Use TanStack Table's `columnVisibility` state + a dropdown toggle component so users can show/hide/reorganise columns (e.g. HR needs 30 columns, a manager needs 5).
-- **Semantic HTML** — Ensure `role="table"`, `role="rowgroup"`, `scope="col"` attributes if using custom `<div>`-based layouts. Prefer native `<table>` elements.
-- **Keyboard navigation** — Full Tab/Enter/Escape support across all interactive elements.
+```
+┌─────────────────────────────────────────────────────┐
+│ Page Header (title + subtitle count + Create button)│
+├─────────────────────────────────────────────────────┤
+│ Toolbar (search + filter toggle + archive + columns)│
+├─────────────────────────────────────────────────────┤
+│ Filter Panel (collapsible, module-specific filters) │
+├─────────────────────────────────────────────────────┤
+│ Table (sticky headers, zebra stripes, sortable)     │
+├─────────────────────────────────────────────────────┤
+│ Bulk Action Toolbar (when rows selected)            │
+├─────────────────────────────────────────────────────┤
+│ Pagination ("Showing X to Y of Z" + Prev/Next)     │
+├─────────────────────────────────────────────────────┤
+│ Drawers & Dialogs (Sheet + Delete confirmation)     │
+└─────────────────────────────────────────────────────┘
+```
+
+Technical requirements:
+- **TanStack Table** — Use `useReactTable` with `getCoreRowModel`. Configure `manualPagination: true` and `manualSorting: true` (server-side).
+- **pageCount** — pass `totalPages` from the API response to `pageCount` in useReactTable config.
+- **Sorting handler** — use `Updater<SortingState>` type (import from `@tanstack/react-table`). Convert TanStack sorting state to/from URL sort string (`+field` / `-field`). Use optional chaining (`newSorting[0]?.desc`) to avoid undefined errors.
+- **Sticky headers** — Apply `sticky top-0 z-10 bg-background` to `<thead>`.
+- **Zebra stripes** — Apply `even:bg-muted/30` for scan readability.
+- **Column visibility** — TanStack `columnVisibility` state + dropdown toggle.
+- **Semantic HTML** — prefer native `<table>` elements.
+- **Page Header** — positioned above the toolbar with `<h1>` title, subtitle showing total count, and primary Create button.
+- **Debounced search** — 300ms debounce with `useState` + `useEffect` + `setTimeout`.
+- **Pagination** — positioned below the bulk toolbar, showing "Showing X to Y of Z" with Previous/Next buttons and page indicator (`page / totalPages`). Use `Common.showing`, `Common.previous`, `Common.next` i18n keys.
 
 ### 2. Mobile Responsive — Card View
 
@@ -200,12 +282,12 @@ For screens `< md` breakpoint:
 - Use `useMediaQuery` or CSS `hidden md:block` / `block md:hidden` patterns.
 - Cards must include the checkbox for selection, supporting bulk actions on mobile.
 
-### 3. Analytical Memory Persistence — URL Sync
+### 3. URL State Persistence (nuqs)
 
-- **All table state must persist in URL query params**: `page`, `pageSize`, `sort`, `search`, and any active filters.
-- Use `useSearchParams` + `useRouter().replace()` to sync state bidirectionally.
+- **All table state must persist in URL query params** via `nuqs`: `page`, `pageSize`, `sort`, `search`, and any active filters.
+- Use the `use[Module]UrlState` hook (see Step 6) that wraps `useQueryState` from `nuqs`.
 - On page reload or shared link, the table MUST rehydrate its exact state from the URL.
-- Apply **debouncing** (300ms) on text search inputs to avoid excessive URL mutations and network requests.
+- Apply **debouncing** (300ms) on text search inputs to avoid excessive URL mutations.
 - **Never expose sensitive data in the URL.**
 
 ### 4. Side Drawer for Create & Update
@@ -260,26 +342,34 @@ The only constraints are the hard rules above. Everything else is a design decis
 
 ---
 
-## Step 7 — Internationalization
+## Step 8 — Internationalization
 
 Update `src/lib/i18n/messages/en.json` and `es.json`. Use `resources/i18n-template.json` as the key structure reference.
 
+### Key naming convention
+
+- **PascalCase namespaces** — `Sources.title`, `AssetDocuments.fields.name` (not `sources.title`)
+- **Common keys** — shared labels go under `Common.*` (e.g., `Common.showing`, `Common.previous`, `Common.next`, `Common.save`)
+- **Module-specific keys** — under `[ModuleName].*` (e.g., `Sources.title`, `Sources.subtitle`, `Sources.fields.*`)
+
 Required key groups:
-- Page title & breadcrumb labels
-- Table column headers
-- Form field labels, placeholders, and hint text
-- Button labels (Save, Cancel, Delete, Archive, Restore, Edit, Duplicate, etc.)
-- Success and error toast messages
-- Confirmation dialog text (including hard-delete challenge prompt)
-- Empty state and loading messages
-- Bulk action toolbar labels
-- Multi-step form step labels
-- Status labels (Active, Inactive, Archived)
-- Column visibility dropdown labels
+- `[Module].title` — page title
+- `[Module].subtitle` — subtitle with `{count}` interpolation (e.g., `"{count} registered sources"`)
+- `[Module].description` — SEO meta description
+- `[Module].emptyState` — empty state message
+- `[Module].fields.*` — table column headers and form field labels
+- `[Module].actions.*` — button labels (createNew, search, edit, view, archive, restore, delete)
+- `[Module].drawer.*` — drawer titles, descriptions, field labels, placeholders
+- `[Module].toast.*` — success messages (created, updated, archived, restored, deleted, batchDeleted, batchArchived, batchRestored)
+- `[Module].status.*` — status labels (active, inactive, archived)
+- `[Module].enums.*` — enum display values (e.g., `Sources.enums.On_chain`)
+- `Common.showing` — `"Showing {from} to {to} of {total}"`
+- `Common.previous` — `"Previous"`
+- `Common.next` — `"Next"`
 
 ---
 
-## Step 8 — Required shadcn/ui Components
+## Step 9 — Required shadcn/ui Components
 
 Ensure the following shadcn/ui components are installed. If any are missing, install them:
 
@@ -292,20 +382,27 @@ Additional dependencies that MUST be present:
 - `@tanstack/react-query` — data fetching
 - `react-hook-form` + `@hookform/resolvers` — form management
 - `lucide-react` — icons
-- `react-hot-toast` — success notifications only
+- `react-hot-toast` — success notifications only (default import: `import toast from "react-hot-toast"`)
 - `next-intl` — i18n
+- `nuqs` — URL state management (replaces `useSearchParams` + `useRouter().replace()`)
 
 ---
 
-## Step 9 — Verification Checklist
+## Step 10 — Verification Checklist
 
 Before marking the module complete, verify:
 
 - [ ] TanStack Table renders with sortable columns and column visibility toggle
+- [ ] `manualPagination: true` and `manualSorting: true` are set
+- [ ] `pageCount: totalPages` is passed to `useReactTable`
+- [ ] Sorting handler uses `Updater<SortingState>` type with optional chaining
+- [ ] `// eslint-disable-next-line react-hooks/incompatible-library` above `useReactTable()`
 - [ ] Sticky headers work on vertical scroll
 - [ ] Zebra stripes are visible
+- [ ] Page header shows title, subtitle with count, and Create button
+- [ ] Pagination shows "Showing X to Y of Z" + Previous/Next buttons + page indicator
 - [ ] Mobile card view activates below `md` breakpoint
-- [ ] URL reflects current page, sort, search, and filter state
+- [ ] URL reflects current page, sort, search, and filter state (via `nuqs`)
 - [ ] Page reload restores exact table state from URL
 - [ ] Search input debounces at 300ms
 - [ ] Side Drawer opens for Create (empty) and Update (pre-populated)
@@ -316,10 +413,12 @@ Before marking the module complete, verify:
 - [ ] Bulk selection shows sticky toolbar with count
 - [ ] Bulk toolbar has overflow menu for destructive actions
 - [ ] `aria-live="polite"` announces selection count changes
-- [ ] Optimistic toggle updates UI instantly
-- [ ] Failed optimistic update rolls back cache
 - [ ] Form validation errors appear inline below fields (no toasts)
 - [ ] Empty states show appropriate messages and CTAs
 - [ ] Loading skeletons display during data fetch
-- [ ] All i18n keys are defined in both `en.json` and `es.json`
+- [ ] All i18n keys are defined in both `en.json` and `es.json` with PascalCase namespaces
 - [ ] Full keyboard navigation works (Tab, Enter, Escape)
+- [ ] No `any` types — use `Prisma.xxxWhereInput` in routes and `Updater<SortingState>` in tables
+- [ ] No duplicate imports from the same package
+- [ ] `toast` imported as default: `import toast from "react-hot-toast"`
+- [ ] API routes import `{ type Prisma } from "@prisma/client"`

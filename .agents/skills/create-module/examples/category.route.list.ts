@@ -1,6 +1,7 @@
 // @ts-nocheck — Reference/example file only. Not compiled. Do NOT copy this line into generated modules.
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { type Prisma } from "@prisma/client";
 import { QueryCategorySchema, CreateCategorySchema } from "@/lib/schemas/category/category.schema";
 import { BatchDeleteSchema, BatchArchiveSchema } from "@/lib/schemas/common";
 import { getPaginationParams, createPaginatedNextResponse } from "@/lib/utils/pagination";
@@ -12,7 +13,7 @@ export const GET = withGuards({}, async ({ req }) => {
     QueryCategorySchema.parse(Object.fromEntries(req.nextUrl.searchParams));
   const { skip, take } = getPaginationParams(req);
 
-  const where: Prisma.CategoryWhereInput = {
+  const where: Prisma.categoryWhereInput = {
     ...filters,
     isArchived, // defaults to false via schema
   };
