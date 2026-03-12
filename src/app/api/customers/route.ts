@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { withGuards } from "@/middlewares";
+
 import { getCustomersByUserId, addCustomer } from "@/lib/mock/mock-customers";
 import { CreateCustomerSchema } from "@/lib/schemas/customer/customer.schema";
+import { withGuards } from "@/middlewares";
 
 /**
  * GET /api/customers
@@ -17,10 +18,7 @@ export const GET = withGuards({}, async (ctx) => {
  * POST /api/customers
  * Creates a new customer for the current session user.
  */
-export const POST = withGuards(
-  { schema: CreateCustomerSchema },
-  async (ctx) => {
-    const customer = addCustomer(ctx.user.id!, ctx.body);
-    return NextResponse.json({ data: customer }, { status: 201 });
-  },
-);
+export const POST = withGuards({ schema: CreateCustomerSchema }, async (ctx) => {
+  const customer = addCustomer(ctx.user.id!, ctx.body);
+  return NextResponse.json({ data: customer }, { status: 201 });
+});

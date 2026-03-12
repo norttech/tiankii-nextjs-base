@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, use, useState, useCallback, type ReactNode } from "react";
+
 import type { Customer } from "@/types/customer";
 
 interface CustomerContextValue {
@@ -9,9 +10,9 @@ interface CustomerContextValue {
   /** The currently active/selected customer */
   activeCustomer: Customer | null;
   /** Switch to a different customer by ID */
-  setActiveCustomerId: (id: string) => void;
+  setActiveCustomerId: (_id: string) => void;
   /** Replace the full customer list (e.g. after fetching or after onboarding) */
-  setCustomers: (customers: Customer[]) => void;
+  setCustomers: (_customers: Customer[]) => void;
 }
 
 const CustomerContext = createContext<CustomerContextValue | null>(null);
@@ -22,10 +23,9 @@ interface CustomerProviderProps {
 }
 
 export function CustomerProvider({ children, initialCustomers = [] }: CustomerProviderProps) {
+  // eslint-disable-next-line @eslint-react/naming-convention/use-state
   const [customers, setCustomersState] = useState<Customer[]>(initialCustomers);
-  const [activeId, setActiveId] = useState<string | null>(
-    initialCustomers[0]?.id ?? null,
-  );
+  const [activeId, setActiveId] = useState<string | null>(initialCustomers[0]?.id ?? null);
 
   const activeCustomer = customers.find((c) => c.id === activeId) ?? customers[0] ?? null;
 
@@ -43,16 +43,14 @@ export function CustomerProvider({ children, initialCustomers = [] }: CustomerPr
   }, []);
 
   return (
-    <CustomerContext.Provider
-      value={{ customers, activeCustomer, setActiveCustomerId, setCustomers }}
-    >
+    <CustomerContext value={{ customers, activeCustomer, setActiveCustomerId, setCustomers }}>
       {children}
-    </CustomerContext.Provider>
+    </CustomerContext>
   );
 }
 
 export function useCustomer() {
-  const ctx = useContext(CustomerContext);
+  const ctx = use(CustomerContext);
   if (!ctx) {
     throw new Error("useCustomer must be used within a <CustomerProvider>");
   }

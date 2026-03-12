@@ -1,6 +1,6 @@
 import { apiFetch } from "./apiFetch";
 
-export type ApiCaller = <T>(path: string, options?: RequestInit) => Promise<T>;
+export type ApiCaller = <T>(_path: string, _options?: RequestInit) => Promise<T>;
 
 export function createPrivateApiFactory(
   getToken: () => string | undefined | Promise<string | undefined>,

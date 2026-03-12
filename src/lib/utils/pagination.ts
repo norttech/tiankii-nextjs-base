@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { PaginationSchema } from "@/lib/schemas/common/pagination.schema";
 
 /** Parsed pagination values + Prisma-ready skip/take derived from URL searchParams */
@@ -21,7 +22,7 @@ export function createPaginatedResponse<R, M = R>(
   records: R[],
   total: number,
   params: PaginationParams,
-  format?: (record: R) => M,
+  format?: (_record: R) => M,
 ): PaginatedResponse<M> {
   const { page, pageSize } = params;
   const totalPages = pageSize > 0 && total > 0 ? Math.ceil(total / pageSize) : 0;
@@ -43,7 +44,7 @@ export function createPaginatedNextResponse<R, M = R>(
   records: R[],
   total: number,
   params: PaginationParams,
-  format?: (record: R) => M,
+  format?: (_record: R) => M,
 ): NextResponse<PaginatedResponse<M>> {
   return NextResponse.json(createPaginatedResponse(records, total, params, format));
 }

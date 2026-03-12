@@ -1,5 +1,6 @@
-import { auth } from "@/auth";
 import { createPrivateApiFactory, createPublicApiFactory } from "../core/createFetchClient";
+
+import { auth } from "@/auth";
 
 async function getServerSessionToken() {
   const session = await auth();

@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Providers } from "@/components/providers";
+import { notFound } from "next/navigation";
+
+import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
-import { notFound } from "next/navigation";
+
+import { Providers } from "@/components/providers";
 import { routing } from "@/lib/i18n/routing";
 import "@/app/globals.css";
 

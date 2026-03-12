@@ -12,7 +12,7 @@ export function useSession() {
   const onboardingCompleted = session?.user?.onboardingCompleted ?? false;
 
   return {
-    session: session,
+    session,
     user,
     isLoading,
     isAuthenticated,

@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { type z } from "zod";
-import { auth } from "@/auth";
 import { type NextRequest, NextResponse } from "next/server";
+
+import { type z } from "zod";
+
+import { auth } from "@/auth";
 import { handleApiError } from "@/lib/utils/error-handler";
 
 export type GuardContext<B = unknown> = {
@@ -10,7 +12,7 @@ export type GuardContext<B = unknown> = {
   body?: B;
 };
 
-export type GuardFunction = (ctx: GuardContext<any>) => Promise<Response | void>;
+export type GuardFunction = (_ctx: GuardContext<any>) => Promise<Response | void>;
 
 export interface GuardOptions<S extends z.ZodType = z.ZodType> {
   schema?: S;
@@ -48,11 +50,11 @@ export const schemaGuard = (schema: z.ZodType): GuardFunction => {
 export function withGuards<S extends z.ZodType = z.ZodType>(
   options: GuardOptions<S>,
   handler: (
-    ctx: GuardContext<z.infer<S>> & { user: SessionUser; body: z.infer<S> },
-    ...args: any[]
+    _ctx: GuardContext<z.infer<S>> & { user: SessionUser; body: z.infer<S> },
+    ..._args: any[]
   ) => Promise<Response>,
 ) {
-  return async (req: NextRequest, ...args: any[]) => {
+  return async (req: NextRequest, ..._args: any[]) => {
     const ctx: GuardContext<any> = { req };
 
     try {
@@ -76,7 +78,7 @@ export function withGuards<S extends z.ZodType = z.ZodType>(
       // 4. Execute the final handler
       return await handler(
         ctx as GuardContext<z.infer<S>> & { user: SessionUser; body: z.infer<S> },
-        ...args,
+        ..._args,
       );
     } catch (error) {
       return handleApiError(error);

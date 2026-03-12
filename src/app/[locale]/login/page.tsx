@@ -1,5 +1,6 @@
-import { LoginForm } from "@/components/auth/login-form";
 import { getTranslations } from "next-intl/server";
+
+import { LoginForm } from "@/components/auth/login-form";
 
 export async function generateMetadata(props: PageProps<"/[locale]/login">) {
   const { locale } = await props.params;

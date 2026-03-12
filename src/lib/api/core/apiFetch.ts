@@ -17,7 +17,7 @@ export async function apiFetch<T>(path: string, options: FetcherOptions = {}): P
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData.error || errorData.message || `HTTP error! status: ${response.status}`,
+      errorData.error ?? errorData.message ?? `HTTP error! status: ${response.status}`,
     );
   }
 

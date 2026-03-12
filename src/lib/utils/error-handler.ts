@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+
 import { ZodError } from "zod";
+
 import type { ApiErrorResponse } from "@/types/api";
 
 // ─── Typed App Error Classes ──────────────────────────────────────────────────
@@ -7,8 +9,8 @@ import type { ApiErrorResponse } from "@/types/api";
 export class AppError extends Error {
   constructor(
     message: string,
-    public readonly statusCode: number = 500,
-    public readonly code: string = "INTERNAL_ERROR",
+    public readonly _statusCode: number = 500,
+    public readonly _code: string = "INTERNAL_ERROR",
   ) {
     super(message);
     this.name = "AppError";
@@ -70,8 +72,8 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
   // 2. Typed App errors — use statusCode directly
   if (error instanceof AppError) {
     return NextResponse.json(
-      { error: error.message, code: error.code },
-      { status: error.statusCode },
+      { error: error.message, code: error._code },
+      { status: error._statusCode },
     );
   }
 

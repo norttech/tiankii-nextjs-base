@@ -1,17 +1,16 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
-import {
-  CreateCustomerSchema,
-  type CreateCustomerFormData,
-} from "@/lib/schemas/customer/customer.schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
+import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,6 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  CreateCustomerSchema,
+  type CreateCustomerFormData,
+} from "@/lib/schemas/customer/customer.schema";
 
 const INDUSTRIES = [
   "Technology",
@@ -100,9 +103,7 @@ export function OnboardingWizard() {
               <line x1="22" x2="16" y1="11" y2="11" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {t("title")}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
           <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
@@ -117,14 +118,8 @@ export function OnboardingWizard() {
               {/* Company Name */}
               <div className="space-y-2">
                 <Label htmlFor="name">{t("companyName")}</Label>
-                <Input
-                  id="name"
-                  placeholder={t("companyNamePlaceholder")}
-                  {...register("name")}
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
-                )}
+                <Input id="name" placeholder={t("companyNamePlaceholder")} {...register("name")} />
+                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
               </div>
 
               {/* Industry */}
@@ -178,9 +173,7 @@ export function OnboardingWizard() {
               </div>
 
               {/* Server error */}
-              {serverError && (
-                <p className="text-center text-sm text-destructive">{serverError}</p>
-              )}
+              {serverError && <p className="text-center text-sm text-destructive">{serverError}</p>}
 
               {/* Submit */}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
