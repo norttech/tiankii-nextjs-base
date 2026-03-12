@@ -10,5 +10,21 @@
     "password": "Password",
     "submit": "Sign in",
     "error": "Invalid email or password"
+  },
+  "Onboarding": {
+    "title": "Welcome aboard!",
+    "subtitle": "Let's get started by setting up your first customer.",
+    "formTitle": "Customer information",
+    "formDescription": "Fill in the basic details of the company you'll be managing.",
+    "companyName": "Company name",
+    "companyNamePlaceholder": "e.g. Acme Corporation",
+    "industry": "Industry",
+    "industryPlaceholder": "Select an industry",
+    "contactEmail": "Contact email",
+    "contactEmailPlaceholder": "contact@company.com",
+    "contactPhone": "Contact phone",
+    "contactPhonePlaceholder": "+1 555-0100",
+    "submit": "Create customer & continue",
+    "error": "Something went wrong. Please try again."
   }
 }

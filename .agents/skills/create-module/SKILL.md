@@ -118,6 +118,26 @@ Create three schemas:
 
 Export inferred TypeScript types for all three: `Create[Module]`, `Update[Module]`, `Query[Module]`.
 
+### Domain Types
+
+Domain types MUST live in `src/types/[module]/index.ts`, **separate from Zod schemas**. Schemas are for validation; types define the data shape.
+
+- **Base model types** — re-export directly from Prisma v7 generated client:
+  ```ts
+  export type { Customer } from "@prisma/client";
+  ```
+- **Composite types with relations** — extend base models in `src/types/prisma/index.ts`:
+  ```ts
+  import type { Customer, User } from "@prisma/client";
+  export type UserWithCustomers = User & { customers: Customer[] };
+  ```
+- **Enums** — always import from `@prisma/client` (Prisma v7 generates them as TypeScript enums):
+  ```ts
+  export type { CustomerStatus } from "@prisma/client";
+  ```
+
+> **Never define a type that duplicates a Prisma model.** Import from the generated client instead.
+
 ---
 
 ## Step 5 — API Routes

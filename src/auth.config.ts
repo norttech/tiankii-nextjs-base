@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getCustomersByUserId } from "@/lib/mock/mock-customers";
 
 export const mockUsers = [
   {
@@ -53,15 +54,26 @@ export const authConfig = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
+        token.userId = (user as any).id;
         token.accessToken = "mock-token-" + (user as any).id;
       }
+
+      // Recompute onboarding status on sign-in and on session update (after onboarding form submit)
+      if (user || trigger === "update") {
+        const userId = token.userId as string;
+        const customers = getCustomersByUserId(userId);
+        token.onboardingCompleted = customers.length > 0;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
+        session.user.id = token.userId as string;
         session.accessToken = token.accessToken as string;
+        session.user.onboardingCompleted = token.onboardingCompleted as boolean;
       }
       return session;
     },

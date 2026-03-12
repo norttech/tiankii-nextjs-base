@@ -28,6 +28,24 @@ export const proxy = auth((req) => {
     if (authResult) return authResult;
   }
 
+  // ── Onboarding redirect ────────────────────────────────────────────────
+  const session = req.auth;
+  if (session?.user && !isApiRoute) {
+    const isOnboardingRoute = pathWithoutLocale === "/onboarding";
+
+    if (!session.user.onboardingCompleted && !isOnboardingRoute) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (session.user.onboardingCompleted && isOnboardingRoute) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (!isApiRoute) {
     return i18nMiddleware(req);
   }

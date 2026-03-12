@@ -9,12 +9,14 @@ export function useSession() {
   const isAuthenticated = status === "authenticated";
 
   const user = session?.user as SessionUser | undefined;
+  const onboardingCompleted = session?.user?.onboardingCompleted ?? false;
 
   return {
     session: session,
     user,
     isLoading,
     isAuthenticated,
+    onboardingCompleted,
     update,
   };
 }

@@ -10,5 +10,21 @@
     "password": "Contraseña",
     "submit": "Iniciar sesión",
     "error": "Correo o contraseña incorrectos"
+  },
+  "Onboarding": {
+    "title": "¡Bienvenido a bordo!",
+    "subtitle": "Comencemos configurando tu primer cliente.",
+    "formTitle": "Información del cliente",
+    "formDescription": "Completa los datos básicos de la empresa que vas a gestionar.",
+    "companyName": "Nombre de la empresa",
+    "companyNamePlaceholder": "ej. Acme Corporation",
+    "industry": "Industria",
+    "industryPlaceholder": "Selecciona una industria",
+    "contactEmail": "Correo de contacto",
+    "contactEmailPlaceholder": "contacto@empresa.com",
+    "contactPhone": "Teléfono de contacto",
+    "contactPhonePlaceholder": "+52 55 1234 5678",
+    "submit": "Crear cliente y continuar",
+    "error": "Algo salió mal. Por favor, intenta de nuevo."
   }
 }

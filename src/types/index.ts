@@ -1,3 +1,4 @@
 export * from "./api";
-export * from "./asset";
+export * from "./customer";
 export * from "./pagination";
+export * from "./prisma";
