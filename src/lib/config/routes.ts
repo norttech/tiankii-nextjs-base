@@ -20,7 +20,7 @@ export const ANONYMOUS_PAGES: string[] = [
 /**
  * Public pages accessible by anonymous users.
  */
-export const PUBLIC_PAGES: string[] = [];
+export const PUBLIC_PAGES: string[] = ["/signout"];
 
 /**
  * Public API routes that bypass authentication.
