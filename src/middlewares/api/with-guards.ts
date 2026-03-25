@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 
 import { type z } from "zod";
 
 import { auth } from "@/auth";
-import { handleApiError } from "@/lib/utils/error-handler";
+import { handleApiError, UnauthorizedError } from "@/lib/utils/error-handler";
 
+// ─── Context Types ────────────────────────────────────────────────────────────
+
+/** Base context passed through every guard and into the handler. */
 export type GuardContext<B = unknown> = {
   req: NextRequest;
   user?: SessionUser;
@@ -19,33 +22,43 @@ export interface GuardOptions<S extends z.ZodType = z.ZodType> {
   guards?: GuardFunction[];
 }
 
+// ─── Built-in Guards ──────────────────────────────────────────────────────────
+
 /**
  * Guard: Validates that the user is authenticated.
+ * Throws `UnauthorizedError` so the central error handler returns a consistent response.
  */
 export const authGuard: GuardFunction = async (ctx) => {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized. A valid session is required.", code: "UNAUTHORIZED" },
-      { status: 401 },
-    );
+    throw new UnauthorizedError();
   }
   ctx.user = session.user as SessionUser;
 };
 
 /**
  * Guard Factory: Validates the request body against a Zod schema.
+ * The Zod `.parse()` throws a `ZodError` which `handleApiError` already formats.
  */
 export const schemaGuard = (schema: z.ZodType): GuardFunction => {
   return async (ctx) => {
-    const rawBody = await ctx.req.json();
-    ctx.body = schema.parse(rawBody);
+    try {
+      const rawBody = await ctx.req.json();
+      ctx.body = schema.parse(rawBody);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error("Request body is required and must be valid JSON.", { cause: error });
+      }
+      throw error;
+    }
   };
 };
 
+// ─── The Guard Composer (HOF) ─────────────────────────────────────────────────
+
 /**
- * The Guard Composer (HOF).
- * Generic on the Zod schema so `ctx.body` is strongly typed as `z.infer<S>` in the handler.
+ * Generic guard composer for any authorized endpoint.
+ * Always authenticates, optionally validates body, runs custom guards, then the handler.
  */
 export function withGuards<S extends z.ZodType = z.ZodType>(
   options: GuardOptions<S>,
@@ -59,8 +72,7 @@ export function withGuards<S extends z.ZodType = z.ZodType>(
 
     try {
       // 1. Always authenticate
-      const authRes = await authGuard(ctx);
-      if (authRes) return authRes;
+      await authGuard(ctx);
 
       // 2. Run schema validation if specified
       if (options.schema) {

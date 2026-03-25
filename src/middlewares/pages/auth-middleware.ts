@@ -8,7 +8,7 @@ export function authMiddleware(
   const isLoggedIn = !!req.auth;
 
   if (!isLoggedIn) {
-    const { pathname } = req.nextUrl;
+    const { pathname, search } = req.nextUrl;
 
     // API routes get a JSON 401 response
     if (pathname.startsWith("/api/")) {
@@ -18,8 +18,12 @@ export function authMiddleware(
       );
     }
 
-    // Page routes get redirected to sign-in
-    return NextResponse.redirect(new URL("/api/auth/signin", req.nextUrl));
+    // Page routes get redirected to the custom login page.
+    // i18nMiddleware will catch this new request and automatically attach the correct locale.
+    const loginUrl = new URL("/login", req.nextUrl);
+    loginUrl.searchParams.set("callbackUrl", pathname + search);
+
+    return NextResponse.redirect(loginUrl);
   }
 
   return undefined; // Allow request to continue

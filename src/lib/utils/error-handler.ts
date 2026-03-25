@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { ZodError } from "zod";
 
+import { logger } from "@/lib/logger";
 import type { ApiErrorResponse } from "@/types/api";
 
 // ─── Typed App Error Classes ──────────────────────────────────────────────────
@@ -54,8 +55,10 @@ export class ConflictError extends AppError {
 
 // ─── Central API Error Handler ────────────────────────────────────────────────
 
+const log = logger.child("api");
+
 export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
-  console.error("[API Error]:", error);
+  log.error("Unhandled API error", error);
 
   // 1. Zod validation errors
   if (error instanceof ZodError) {
